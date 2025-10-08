@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capacitación SST</title>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
@@ -27,117 +27,88 @@
 
   <main id="contenedorModulos"></main>
   <div id="notificacion" class="notificacion"></div>
+  <iframe name="oculto" style="display:none;"></iframe>
+  <iframe id="iframeEstado" style="display:none;"></iframe>
 
   <script>
-    // ✅ Apps Script que escribe en tu hoja (usa doPost)
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
-
-    // ✅ Hoja 2 con los links de videos y formularios
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+    const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "12345678" };
 
-    const user = JSON.parse(sessionStorage.getItem("user"));
-    if (!user) window.location.href = "index.html";
+    function transformarVideo(link){return link?.includes("/view")?link.replace("/view","/preview"):link;}
+    function transformarForm(link){if(!link)return"";return link.includes("?")?link+"&embedded=true":link+"?embedded=true";}
 
-    const modulos = [
-      { key: "induccion", nombre: "Video de Inducción SST" },
-      { key: "primerosAuxilios", nombre: "Video de Primeros Auxilios" },
-      { key: "ergonomia", nombre: "Video de Ergonomía en el Trabajo" },
-      { key: "epp", nombre: "Video de EPP" }
-    ];
-
-    function transformarVideo(link) {
-      return link?.replace("/view", "/preview") || "";
-    }
-    function transformarForm(link) {
-      if (!link) return "";
-      return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
-    }
-
-    async function obtenerCSV(url) {
-      const resp = await fetch(url);
-      const texto = await resp.text();
-      return texto.trim().split("\n").map(r => r.split(","));
-    }
-
-    async function obtenerLinks() {
-      const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers = hoja2[0];
-      const fila = hoja2[1];
+    async function obtenerCSV(url){const r=await fetch(url);const t=await r.text();return t.trim().split("\n").map(l=>l.split(","));}
+    async function obtenerLinks(){
+      const d=await obtenerCSV(URL_HOJA2);const h=d[0];const f=d[1];
+      const v=n=>f[h.indexOf(n)]||"";
       return {
-        induccion: {
-          video: fila[headers.indexOf("LINK VIDEO DE INDUCCION SST")],
-          form: fila[headers.indexOf("LINK EVALUACION")]
-        },
-        primerosAuxilios: {
-          video: fila[headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")],
-          form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))]
-        },
-        ergonomia: {
-          video: fila[headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")],
-          form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))]
-        },
-        epp: {
-          video: fila[headers.indexOf("LINK VIDEO DE EPP")],
-          form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE EPP"))]
-        }
+        induccion:{video:v("LINK VIDEO DE INDUCCION SST"),form:v("LINK EVALUACION INDUCCION")},
+        primerosAuxilios:{video:v("LINK VIDEO DE PRIMEROS AUXILIOS"),form:v("LINK EVALUACION PRIMEROS AUXILIOS")},
+        ergonomia:{video:v("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"),form:v("LINK EVALUACION ERGONOMIA")},
+        epp:{video:v("LINK VIDEO DE EPP"),form:v("LINK EVALUACION EPP")}
       };
     }
 
-    async function cargarModulos() {
-      const links = await obtenerLinks();
-      const cont = document.getElementById("contenedorModulos");
-      cont.innerHTML = "";
-
-      modulos.forEach(m => {
-        const videoSrc = transformarVideo(links[m.key].video);
-        const formSrc = transformarForm(links[m.key].form);
-
-        const html = `
-          <div class="modulo" id="mod-${m.key}">
-            <h3>${m.nombre}</h3>
-            <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-
-            <button class="btn-confirmar" onclick="confirmarVisualizacion('${m.key}')">Confirmar que vi el video</button>
-
-            <iframe class="formFrame" id="form-${m.key}" src="${formSrc}"></iframe>
-            <div class="info" id="info-${m.key}">Estado: Pendiente</div>
-          </div>
-        `;
-        cont.insertAdjacentHTML("beforeend", html);
+    async function cargarModulos(){
+      const links=await obtenerLinks();
+      const cont=document.getElementById("contenedorModulos");
+      cont.innerHTML="";
+      const modulos=[
+        {key:"induccion",nombre:"Video de Inducción SST"},
+        {key:"primerosAuxilios",nombre:"Video de Primeros Auxilios"},
+        {key:"ergonomia",nombre:"Video de Ergonomía en el Trabajo"},
+        {key:"epp",nombre:"Video de EPP"}
+      ];
+      modulos.forEach(m=>{
+        const videoSrc=transformarVideo(links[m.key].video);
+        const formSrc=transformarForm(links[m.key].form);
+        const html=`
+        <div class="modulo" id="mod-${m.key}">
+          <h3>${m.nombre}</h3>
+          <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+          <form action="${API_URL}" method="POST" target="oculto" onsubmit="return confirmarVisualizacion('${m.key}')">
+            <input type="hidden" name="dni" value="${user.dni}">
+            <input type="hidden" name="modulo" value="${m.key}">
+            <button type="submit" class="btn-confirmar">Confirmar que vi el video</button>
+          </form>
+          <iframe class="formFrame" id="form-${m.key}" src="${formSrc}"></iframe>
+          <div class="info" id="info-${m.key}">Estado: 🕓 Pendiente</div>
+        </div>`;
+        cont.insertAdjacentHTML("beforeend",html);
       });
+      // ✅ Consultar estado actual desde la hoja
+      document.getElementById("iframeEstado").src = `${API_URL}?dni=${user.dni}`;
     }
 
-    async function confirmarVisualizacion(modulo) {
-      const datos = new FormData();
-      datos.append("dni", user.dni);
-      datos.append("modulo", modulo);
+    function confirmarVisualizacion(modulo){
+      mostrarNotificacion(`⏳ Enviando confirmación para ${modulo.toUpperCase()}...`);
+      document.getElementById(`info-${modulo}`).textContent="⏳ Enviando confirmación...";
+      return true;
+    }
 
-      const respuesta = await fetch(API_URL, { method: "POST", body: datos });
-      const json = await respuesta.json();
-
-      if (json.status === "OK") {
-        document.getElementById(`form-${modulo}`).style.display = "block";
-        document.getElementById(`info-${modulo}`).innerHTML = json.message;
-        mostrarNotificacion("✅ Confirmación enviada: " + modulo.toUpperCase());
-      } else {
-        mostrarNotificacion("❌ " + json.message);
+    window.addEventListener("message",e=>{
+      if(typeof e.data === "string" && e.data.startsWith("OK_")){
+        const [_,mod,fecha]=e.data.split("_");
+        document.getElementById(`info-${mod}`).innerHTML=`✅ Confirmado el ${fecha}`;
+        mostrarNotificacion(`✅ ${mod.toUpperCase()} confirmado el ${fecha}`);
+      } else if(typeof e.data === "string" && e.data.startsWith("ERROR_")){
+        mostrarNotificacion("⚠️ "+e.data.split("_")[1]);
+      } else if(typeof e.data === "object"){
+        for(const key in e.data){
+          const fecha=e.data[key];
+          document.getElementById(`info-${key}`).innerHTML=fecha?`✅ Confirmado el ${fecha}`:`🕓 Pendiente`;
+        }
       }
-    }
+    });
 
-    function mostrarNotificacion(msg) {
-      const box = document.getElementById("notificacion");
-      box.textContent = msg;
-      box.style.display = "block";
-      setTimeout(() => (box.style.display = "none"), 3000);
+    function mostrarNotificacion(msg){
+      const box=document.getElementById("notificacion");
+      box.textContent=msg; box.style.display="block";
+      setTimeout(()=>box.style.display="none",3000);
     }
-
-    function logout() {
-      sessionStorage.clear();
-      window.location.href = "index.html";
-    }
-
+    function logout(){sessionStorage.clear();window.location.href="index.html";}
     cargarModulos();
   </script>
 </body>
 </html>
-
