@@ -31,8 +31,10 @@
   <iframe id="iframeEstado" style="display:none;"></iframe>
 
   <script>
+    // ✅ URL del Apps Script (reemplaza con tu despliegue)
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+
     const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "12345678" };
 
     function transformarVideo(link){return link?.includes("/view")?link.replace("/view","/preview"):link;}
@@ -60,6 +62,7 @@
         {key:"ergonomia",nombre:"Video de Ergonomía en el Trabajo"},
         {key:"epp",nombre:"Video de EPP"}
       ];
+
       modulos.forEach(m=>{
         const videoSrc=transformarVideo(links[m.key].video);
         const formSrc=transformarForm(links[m.key].form);
@@ -67,46 +70,46 @@
         <div class="modulo" id="mod-${m.key}">
           <h3>${m.nombre}</h3>
           <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-          <form action="${API_URL}" method="POST" target="oculto" onsubmit="return confirmarVisualizacion('${m.key}')">
+
+          <form action="${API_URL}" method="POST" target="oculto" onsubmit="return validarYEnviar(this, '${m.key}')">
+            <p style="margin:10px;">¿Viste el video?</p>
+            <label><input type="radio" name="visto" value="si" required> Sí</label>
+            <label style="margin-left:15px;"><input type="radio" name="visto" value="no" required> No</label><br>
             <input type="hidden" name="dni" value="${user.dni}">
             <input type="hidden" name="modulo" value="${m.key}">
-            <button type="submit" class="btn-confirmar">Confirmar que vi el video</button>
+            <button type="submit" class="btn-confirmar">Confirmar</button>
           </form>
+
           <iframe class="formFrame" id="form-${m.key}" src="${formSrc}"></iframe>
           <div class="info" id="info-${m.key}">Estado: 🕓 Pendiente</div>
         </div>`;
         cont.insertAdjacentHTML("beforeend",html);
       });
-      // ✅ Consultar estado actual desde la hoja
+
       document.getElementById("iframeEstado").src = `${API_URL}?dni=${user.dni}`;
     }
 
-    function confirmarVisualizacion(modulo){
-      mostrarNotificacion(`⏳ Enviando confirmación para ${modulo.toUpperCase()}...`);
+    function validarYEnviar(form, modulo){
+      const opcion = form.visto.value;
+      if(opcion === "no"){
+        mostrarNotificacion("❌ No se registró confirmación. Marca 'Sí' para confirmar.");
+        return false;
+      }
+      mostrarNotificacion(`⏳ Enviando confirmación de ${modulo.toUpperCase()}...`);
       document.getElementById(`info-${modulo}`).textContent="⏳ Enviando confirmación...";
+      setTimeout(()=>{
+        mostrarNotificacion(`✅ Confirmación enviada para ${modulo.toUpperCase()}`);
+        document.getElementById(`form-${modulo}`).style.display="block"; // ✅ Muestra el formulario de evaluación
+      },2000);
       return true;
     }
-
-    window.addEventListener("message",e=>{
-      if(typeof e.data === "string" && e.data.startsWith("OK_")){
-        const [_,mod,fecha]=e.data.split("_");
-        document.getElementById(`info-${mod}`).innerHTML=`✅ Confirmado el ${fecha}`;
-        mostrarNotificacion(`✅ ${mod.toUpperCase()} confirmado el ${fecha}`);
-      } else if(typeof e.data === "string" && e.data.startsWith("ERROR_")){
-        mostrarNotificacion("⚠️ "+e.data.split("_")[1]);
-      } else if(typeof e.data === "object"){
-        for(const key in e.data){
-          const fecha=e.data[key];
-          document.getElementById(`info-${key}`).innerHTML=fecha?`✅ Confirmado el ${fecha}`:`🕓 Pendiente`;
-        }
-      }
-    });
 
     function mostrarNotificacion(msg){
       const box=document.getElementById("notificacion");
       box.textContent=msg; box.style.display="block";
       setTimeout(()=>box.style.display="none",3000);
     }
+
     function logout(){sessionStorage.clear();window.location.href="index.html";}
     cargarModulos();
   </script>
