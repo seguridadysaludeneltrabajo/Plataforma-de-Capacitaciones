@@ -1,22 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capacitación</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; }
-    header { background: #0078d4; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; }
+    header { background: #0056b3; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
     main { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
-    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
-    iframe { border: none; width: 100%; }
+    .modulo { background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); overflow: hidden; }
+    .modulo h3 { background: #e9ecef; margin: 0; padding: 10px; }
+    iframe { width: 100%; border: none; }
     .videoFrame { height: 240px; }
-    .formFrame { height: 400px; }
-    .info { padding: 10px; background: #fafafa; border-top: 1px solid #eee; font-size: 14px; }
-    .btn-visto { margin: 10px auto; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .btn-visto:hover { background: #218838; }
-    .alerta { background: #ffcccc; color: #b30000; text-align: center; font-weight: bold; padding: 8px; }
+    .formFrame { height: 380px; }
+    .info { padding: 10px; font-size: 14px; border-top: 1px solid #eee; background: #fafafa; }
+    .alerta { background: #ffebeb; color: #b30000; padding: 8px; text-align: center; font-weight: bold; }
+    .btnConfirmar {
+      display: block; width: 80%; margin: 10px auto; padding: 10px;
+      background: #0078d4; color: white; font-weight: bold; border: none; border-radius: 6px;
+      cursor: pointer; transition: background 0.3s;
+    }
+    .btnConfirmar:hover { background: #005fa3; }
   </style>
 </head>
 <body>
@@ -28,6 +32,7 @@
   <main id="contenedorModulos"></main>
 
   <script>
+    // 🔹 CONFIGURACIÓN
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
@@ -77,24 +82,11 @@
       const usuario = data1.find(r => r[headers1.indexOf("DNI/CE")].trim() === user.dni);
 
       const links = {
-        induccion: {
-          video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")],
-          form: data2[0][headers2.indexOf("LINK EVALUACION")]
-        },
-        primerosAuxilios: {
-          video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")],
-          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))]
-        },
-        ergonomia: {
-          video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")],
-          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))]
-        },
-        epp: {
-          video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")],
-          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))]
-        }
+        induccion: { video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")], form: data2[0][headers2.indexOf("LINK EVALUACION")] },
+        primerosAuxilios: { video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))) },
+        ergonomia: { video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))) },
+        epp: { video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))) }
       };
-
       return { headers1, usuario, links };
     }
 
@@ -106,17 +98,13 @@
       const aprobado = notaNum >= 14;
 
       let html = `<div class="modulo"><h3>${nombre}</h3>`;
-
-      if ((nota && notaNum < 14) || esVencido) {
-        html += `<div class="alerta">⚠️ Capacitación vencida o desaprobada. Debe desarrollarla nuevamente.</div>`;
-      }
-
       html += `<iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>`;
 
+      // Botón de confirmación
       if (!inicio || esVencido) {
-        html += `<button class="btn-visto" onclick="marcarVisto('${key}', this)">Marcar video como visto</button>`;
+        html += `<button class="btnConfirmar" onclick="enviarConfirmacion('${key}')">✅ Enviar confirmación de video</button>`;
       } else {
-        html += `<p style="color:green; text-align:center; font-weight:bold;">✅ Video visto el ${inicio}</p>`;
+        html += `<p style="color:green; text-align:center; font-weight:bold;">✅ Video confirmado el ${inicio}</p>`;
       }
 
       if (!inicio || esVencido || !aprobado) {
@@ -134,6 +122,24 @@
         </div>
       </div>`;
       return html;
+    }
+
+    async function enviarConfirmacion(modulo) {
+      const confirmacion = confirm("¿Confirmas que has visualizado este video?");
+      if (!confirmacion) return;
+
+      try {
+        const res = await fetch(`${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`);
+        const data = await res.json();
+        if (data.status === "OK") {
+          alert("✅ Confirmación enviada correctamente");
+          cargarModulos();
+        } else {
+          alert("⚠️ No se pudo registrar la confirmación");
+        }
+      } catch (e) {
+        alert("Error al registrar: " + e.message);
+      }
     }
 
     async function cargarModulos() {
@@ -159,27 +165,6 @@
       } catch (e) {
         alert("Error al cargar módulos: " + e.message);
         console.error(e);
-      }
-    }
-
-    async function marcarVisto(modulo, boton) {
-      boton.disabled = true;
-      boton.textContent = "Registrando...";
-      try {
-        const res = await fetch(`${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`);
-        const data = await res.json();
-        if (data.ok) {
-          boton.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ Video visto correctamente</p>`;
-        } else {
-          alert(data.mensaje);
-          boton.disabled = false;
-          boton.textContent = "Marcar video como visto";
-        }
-      } catch (e) {
-        console.error(e);
-        alert("No se pudo registrar el visto");
-        boton.disabled = false;
-        boton.textContent = "Marcar video como visto";
       }
     }
 
