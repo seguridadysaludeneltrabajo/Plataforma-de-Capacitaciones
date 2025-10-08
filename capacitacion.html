@@ -1,37 +1,91 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Capacitación</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #f8f9fa;
+    }
     header {
-      background: #0078d4; color: white; padding: 10px 20px;
-      display: flex; justify-content: space-between; align-items: center;
+      background: #0078d4;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h2 {
+      margin: 0;
+    }
+    button {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 5px;
+      cursor: pointer;
     }
     main {
+      flex: 1;
       padding: 20px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 20px;
     }
     .modulo {
-      background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding-bottom: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
-    .modulo h3 { background: #f0f0f0; margin: 0; padding: 10px; }
-    iframe { border: none; width: 100%; }
-    .videoFrame { height: 240px; }
-    .formFrame { height: 400px; display: none; }
-    .formFrame.activo { display: block; }
-    .info { padding: 10px; background: #fafafa; border-top: 1px solid #eee; font-size: 14px; }
+    .modulo h3 {
+      margin: 0;
+      padding: 10px;
+      background: #f0f0f0;
+    }
+    iframe {
+      border: none;
+      width: 100%;
+    }
+    .videoFrame {
+      height: 240px;
+    }
+    .formFrame {
+      height: 380px;
+    }
+    .info {
+      padding: 10px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      font-size: 14px;
+    }
     .btn-visto {
-      display: block; margin: 10px auto;
-      padding: 8px 14px; border: none; border-radius: 6px;
-      background: #28a745; color: white; cursor: pointer; font-size: 15px;
+      margin: 10px auto;
+      display: block;
+      padding: 6px 12px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
-    .btn-visto[disabled] { background: gray; cursor: not-allowed; }
+    .vigente {
+      color: #28a745;
+      font-weight: bold;
+    }
+    .vencido {
+      color: #d9534f;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -39,65 +93,92 @@
     <h2>Plataforma de Capacitación</h2>
     <button onclick="logout()">Cerrar sesión</button>
   </header>
+
   <main id="contenedorModulos"></main>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec; // cambia por tu enlace web publicado
+    const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
     const user = JSON.parse(sessionStorage.getItem("user"));
-    if (!user) window.location.href = "index.html";
-
-    const modulos = ["induccion", "primerosAuxilios", "ergonomia", "epp"];
-
-    function transformarVideo(link) { return link ? link.replace("/view", "/preview") : ""; }
-    function transformarForm(link) { return link ? link + (link.includes("?") ? "&" : "?") + "embedded=true" : ""; }
-
-    async function obtenerEstado() {
-      const res = await fetch(`${API_URL}?action=estado&dni=${user.dni}`);
-      const data = await res.json();
-      return data.modulos || {};
+    
+    if (!user) {
+      window.location.href = "index.html";
     }
 
-    async function construir() {
-      const estado = await obtenerEstado();
-      const cont = document.getElementById("contenedorModulos");
+    const moduloKeys = ["induccion", "primerosAuxilios", "ergonomia", "epp"];
+    const hoy = new Date();
 
-      modulos.forEach(m => {
-        const info = estado[m] || {};
-        const linkObj = user.links[m];
-        const videoSrc = transformarVideo(linkObj.video);
-        const formSrc = transformarForm(linkObj.form);
-        const visto = !info.activo;
-        const inicio = info.inicio || "";
-        const venc = info.vencimiento || "";
-        const nota = info.nota || "";
+    function transformToPreview(driveLink) {
+      if (!driveLink) return "";
+      return driveLink.replace("/view", "/preview");
+    }
 
-        cont.insertAdjacentHTML("beforeend", `
-          <div class="modulo" id="mod-${m}">
-            <h3>${m}</h3>
-            <iframe class="videoFrame" src="${videoSrc}"></iframe>
-            <button class="btn-visto" id="btn-${m}" ${visto ? "disabled" : ""} onclick="marcarVisto('${m}')">
-              ${visto ? "✅ Ya completado" : "Marcar video como visto"}
-            </button>
-            <iframe id="form-${m}" class="formFrame ${visto ? "activo" : ""}" src="${formSrc}"></iframe>
-            <div class="info">
-              Fecha inicio: ${inicio || "-"}<br>
-              Fecha vencimiento: ${venc || "-"}<br>
-              Nota: ${nota || "-"}
-            </div>
+    function transformToEmbeddedForm(formLink) {
+      if (!formLink) return "";
+      if (formLink.includes("?")) {
+        return formLink + "&embedded=true";
+      }
+      return formLink + "?embedded=true";
+    }
+
+    // Calcular si el módulo está vigente
+    function calcularVigencia(fechaInicio, nota) {
+      if (!fechaInicio || !nota) return { vigente: false };
+      const partes = fechaInicio.split("/");
+      if (partes.length < 3) return { vigente: false };
+      const fecha = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
+      const vencimiento = new Date(fecha);
+      vencimiento.setFullYear(fecha.getFullYear() + 1);
+      const vigente = (nota >= 14 && vencimiento > hoy);
+      return { vigente, vencimiento };
+    }
+
+    function crearModulo(key) {
+      const linkObj = user.links?.[key] || {};
+      const datos = user.modulos?.[key] || {};
+      const nota = parseFloat(datos.nota) || 0;
+      const fechaInicio = datos.inicio || "";
+
+      const { vigente, vencimiento } = calcularVigencia(fechaInicio, nota);
+
+      const videoSrc = transformToPreview(linkObj.video || "");
+      const formSrc = transformToEmbeddedForm(linkObj.form || "");
+
+      let estadoHTML = "";
+      let formHTML = "";
+
+      if (vigente) {
+        estadoHTML = `<div class="vigente">✅ Vigente hasta ${vencimiento.toLocaleDateString()}</div>`;
+      } else {
+        estadoHTML = `<div class="vencido">⚠️ Vencido o pendiente de completar</div>`;
+        formHTML = `
+          <button class="btn-visto" onclick="marcarVisto('${key}')">✅ Marcar video como visto</button>
+          <iframe class="formFrame" src="${formSrc}"></iframe>
+        `;
+      }
+
+      return `
+        <div class="modulo">
+          <h3>Módulo: ${key}</h3>
+          <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+          ${formHTML}
+          <div class="info">
+            ${estadoHTML}
+            Nota: ${nota || "N/A"} <br>
+            Fecha de inicio: ${fechaInicio || "—"}
           </div>
-        `);
-      });
+        </div>
+      `;
     }
 
     async function marcarVisto(modulo) {
-      const url = `${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`;
+      const url = `${API_URL}?action=registrar&dni=${encodeURIComponent(user.dni)}&modulo=${encodeURIComponent(modulo)}`;
       try {
         const res = await fetch(url);
         const data = await res.json();
         alert(data.mensaje);
-        document.getElementById(`btn-${modulo}`).disabled = true;
-        document.getElementById(`form-${modulo}`).classList.add("activo");
-      } catch {
+        location.reload();
+      } catch (err) {
+        console.error("Error al marcar visto:", err);
         alert("No se pudo registrar el visto");
       }
     }
@@ -107,7 +188,11 @@
       window.location.href = "index.html";
     }
 
-    construir();
+    // Renderizar módulos
+    const cont = document.getElementById("contenedorModulos");
+    moduloKeys.forEach(key => {
+      cont.insertAdjacentHTML("beforeend", crearModulo(key));
+    });
   </script>
 </body>
 </html>
