@@ -28,21 +28,27 @@
   <main id="contenedorModulos"></main>
   <div id="notificacion" class="notificacion"></div>
   <iframe name="oculto" style="display:none;"></iframe>
-  <iframe id="iframeEstado" style="display:none;"></iframe>
 
   <script>
-    // ✅ URL del Apps Script (reemplaza con tu despliegue)
+    // ✅ URL del Apps Script publicado (reemplaza con tu deployment)
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
+    // ✅ Obtener el usuario logueado (DNI desde sesión)
     const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "12345678" };
 
+    // Utilidades para mostrar los videos y formularios
     function transformarVideo(link){return link?.includes("/view")?link.replace("/view","/preview"):link;}
     function transformarForm(link){if(!link)return"";return link.includes("?")?link+"&embedded=true":link+"?embedded=true";}
 
-    async function obtenerCSV(url){const r=await fetch(url);const t=await r.text();return t.trim().split("\n").map(l=>l.split(","));}
+    async function obtenerCSV(url){
+      const r=await fetch(url);const t=await r.text();
+      return t.trim().split("\n").map(l=>l.split(","));
+    }
+
     async function obtenerLinks(){
-      const d=await obtenerCSV(URL_HOJA2);const h=d[0];const f=d[1];
+      const d=await obtenerCSV(URL_HOJA2);
+      const h=d[0];const f=d[1];
       const v=n=>f[h.indexOf(n)]||"";
       return {
         induccion:{video:v("LINK VIDEO DE INDUCCION SST"),form:v("LINK EVALUACION INDUCCION")},
@@ -71,7 +77,8 @@
           <h3>${m.nombre}</h3>
           <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
 
-          <form action="${API_URL}" method="POST" target="oculto" onsubmit="return validarYEnviar(this, '${m.key}')">
+          <!-- ✅ Formulario interno -->
+          <form action="${API_URL}" method="POST" target="oculto" onsubmit="return enviarConfirmacion(this, '${m.key}')">
             <p style="margin:10px;">¿Viste el video?</p>
             <label><input type="radio" name="visto" value="si" required> Sí</label>
             <label style="margin-left:15px;"><input type="radio" name="visto" value="no" required> No</label><br>
@@ -85,28 +92,27 @@
         </div>`;
         cont.insertAdjacentHTML("beforeend",html);
       });
-
-      document.getElementById("iframeEstado").src = `${API_URL}?dni=${user.dni}`;
     }
 
-    function validarYEnviar(form, modulo){
-      const opcion = form.visto.value;
-      if(opcion === "no"){
-        mostrarNotificacion("❌ No se registró confirmación. Marca 'Sí' para confirmar.");
+    function enviarConfirmacion(form, modulo){
+      const opcion=form.visto.value;
+      if(opcion==="no"){
+        mostrarNotificacion("❌ Marca 'Sí' para confirmar que viste el video.");
         return false;
       }
       mostrarNotificacion(`⏳ Enviando confirmación de ${modulo.toUpperCase()}...`);
-      document.getElementById(`info-${modulo}`).textContent="⏳ Enviando confirmación...";
+      document.getElementById(`info-${modulo}`).textContent="⏳ Enviando...";
       setTimeout(()=>{
-        mostrarNotificacion(`✅ Confirmación enviada para ${modulo.toUpperCase()}`);
-        document.getElementById(`form-${modulo}`).style.display="block"; // ✅ Muestra el formulario de evaluación
+        mostrarNotificacion(`✅ Confirmación registrada`);
+        document.getElementById(`form-${modulo}`).style.display="block"; // ✅ Mostrar evaluación
+        document.getElementById(`info-${modulo}`).textContent="✅ Video confirmado";
       },2000);
-      return true;
+      return true; // Permite que el <form> se envíe al Apps Script
     }
 
     function mostrarNotificacion(msg){
       const box=document.getElementById("notificacion");
-      box.textContent=msg; box.style.display="block";
+      box.textContent=msg;box.style.display="block";
       setTimeout(()=>box.style.display="none",3000);
     }
 
