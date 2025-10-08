@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Capacitación</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+    body { margin: 0; font-family: Arial, sans-serif; display: flex; flex-direction: column; min-height: 100vh; background: #f5f7fa; }
     header { background: #0078d4; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
     main { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-    .modulo { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
-    .modulo h3 { margin: 0; padding: 10px; background: #f0f0f0; }
+    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
+    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
     iframe { border: none; width: 100%; }
     .videoFrame { height: 240px; }
-    .formFrame { height: 380px; }
+    .formFrame { height: 400px; }
     .info { padding: 10px; background: #fafafa; border-top: 1px solid #eee; font-size: 14px; }
-    .btn-visto { margin: 10px auto; display: block; padding: 6px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-visto { margin: 10px auto; display: block; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-visto:hover { background: #218838; }
   </style>
 </head>
 <body>
@@ -30,72 +31,120 @@
     const user = JSON.parse(sessionStorage.getItem("user"));
     if (!user) window.location.href = "index.html";
 
-    const moduloKeys = ["induccion", "primerosAuxilios", "ergonomia", "epp"];
+    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
+    const modulos = ["induccion", "primerosAuxilios", "ergonomia", "epp"];
 
-    function transformToPreview(link){ return link?.replace("/view", "/preview") || ""; }
-    function transformToEmbeddedForm(link){ return link ? link + (link.includes("?") ? "&embedded=true" : "?embedded=true") : ""; }
+    function transformarVideo(link){ return link?.replace("/view", "/preview") || ""; }
+    function transformarForm(link){ return link ? link + (link.includes("?") ? "&embedded=true" : "?embedded=true") : ""; }
 
-    function sumarUnAnio(fechaStr){
-      const [d,m,a] = fechaStr.split(/[\/ ]/);
-      const f = new Date(`${a}-${m}-${d}`); f.setFullYear(f.getFullYear()+1);
+    function sumarUnAnio(fecha){
+      const [d,m,a] = fecha.split(/[\/ ]/);
+      const f = new Date(`${a}-${m}-${d}`);
+      f.setFullYear(f.getFullYear() + 1);
       return f.toLocaleDateString("es-PE");
     }
 
-    function estaVencido(fechaInicioStr){
-      if(!fechaInicioStr) return true;
-      const [d,m,a] = fechaInicioStr.split(/[\/ ]/);
-      const fi = new Date(`${a}-${m}-${d}`); const ahora = new Date();
-      const venc = new Date(fi); venc.setFullYear(venc.getFullYear()+1);
-      return ahora > venc;
+    function vencido(fecha){
+      if(!fecha) return true;
+      const [d,m,a] = fecha.split(/[\/ ]/);
+      const f = new Date(`${a}-${m}-${d}`);
+      const ahora = new Date();
+      const fven = new Date(f); fven.setFullYear(fven.getFullYear()+1);
+      return ahora > fven;
     }
 
-    function crearModulo(key){
-      const l = user.links[key] || {};
-      const m = user.modulos[key] || {};
-      const nota = m.nota || "";
-      const inicio = m.inicio || "";
-      const video = transformToPreview(l.video);
-      const form = transformToEmbeddedForm(l.form);
+    async function obtenerDatosHoja(){
+      const res = await fetch(URL_HOJA1);
+      const text = await res.text();
+      const rows = text.trim().split("\n").map(r => r.split(","));
+      const headers = rows[0];
+      const data = rows.slice(1);
+      const usuario = data.find(r => r[headers.indexOf("DNI/CE")].trim() === user.dni);
+      return { headers, usuario };
+    }
 
-      const vencido = estaVencido(inicio);
-      const aprobado = parseFloat(nota) >= 14;
-      const mostrarForm = vencido || !aprobado;
+    function crearModulo(nombre, video, form, nota, inicio){
+      const videoSrc = transformarVideo(video);
+      const formSrc = transformarForm(form);
+      const notaNum = parseFloat(nota) || 0;
+      const esVencido = vencido(inicio);
+      const aprobado = notaNum >= 14;
 
-      const boton = inicio && !vencido ?
-        `<p style="color:green;font-weight:bold;">✅ Video visto el ${inicio}</p>` :
-        `<button class="btn-visto" onclick="marcarVisto('${key}', this)">Marcar video como visto</button>`;
-
-      return `
+      let contenido = `
         <div class="modulo">
-          <h3>${key.toUpperCase()}</h3>
-          <iframe class="videoFrame" src="${video}" allow="autoplay; fullscreen"></iframe>
-          ${boton}
-          ${mostrarForm ? `<iframe class="formFrame" src="${form}"></iframe>` :
-          `<p style="color:blue;text-align:center;">Capacitación vigente hasta ${sumarUnAnio(inicio)}</p>`}
-          <div class="info">
-            Estado: ${inicio ? "Visto" : "Pendiente"}<br>
-            Nota: ${nota || "—"}<br>
-            Fecha de inicio: ${inicio || "—"}<br>
-            Fecha de vencimiento: ${(inicio && !vencido) ? sumarUnAnio(inicio) : "—"}
-          </div>
-        </div>`;
+          <h3>${nombre.toUpperCase()}</h3>
+          <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+      `;
+
+      if(!inicio || esVencido){
+        contenido += `<button class="btn-visto" onclick="marcarVisto('${nombre}', this)">Marcar video como visto</button>`;
+      } else {
+        contenido += `<p style="color:green;text-align:center;font-weight:bold;">✅ Video visto el ${inicio}</p>`;
+      }
+
+      if(!inicio || esVencido || !aprobado){
+        contenido += `<iframe class="formFrame" src="${formSrc}"></iframe>`;
+      } else {
+        contenido += `<p style="color:blue;text-align:center;">Capacitación vigente hasta ${sumarUnAnio(inicio)}</p>`;
+      }
+
+      contenido += `
+        <div class="info">
+          Estado: ${inicio ? (esVencido ? "Vencido" : "Vigente") : "Pendiente"}<br>
+          Nota: ${nota || "—"}<br>
+          Fecha inicio: ${inicio || "—"}<br>
+          Fecha vencimiento: ${(inicio && !esVencido) ? sumarUnAnio(inicio) : "—"}
+        </div>
+      </div>`;
+      return contenido;
+    }
+
+    async function cargarModulos(){
+      const { headers, usuario } = await obtenerDatosHoja();
+      const cont = document.getElementById("contenedorModulos");
+      cont.innerHTML = "";
+
+      const columnas = {
+        induccion: "VIDEO DE INDUCCION SST",
+        primerosAuxilios: "VIDEO DE PRIMEROS AUXILIOS",
+        ergonomia: "VIDEO DE ERGONOMIA EN EL TRABAJO",
+        epp: "VIDEO DE EPP"
+      };
+
+      modulos.forEach(mod => {
+        const base = headers.indexOf(columnas[mod]);
+        const nota = usuario[base+1];
+        const inicio = usuario[base+2];
+        const v = user.links[mod]?.video || "";
+        const f = user.links[mod]?.form || "";
+        cont.insertAdjacentHTML("beforeend", crearModulo(mod, v, f, nota, inicio));
+      });
     }
 
     async function marcarVisto(modulo, boton){
-      boton.disabled = true; boton.textContent="Registrando...";
-      const url = `${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`;
+      boton.disabled = true; boton.textContent = "Registrando...";
       try{
-        const res = await fetch(url); const data = await res.json();
+        const res = await fetch(`${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`);
+        const data = await res.json();
         if(data.ok){
-          boton.outerHTML = `<p style="color:green;font-weight:bold;">✅ Video visto el ${data.fecha}</p>`;
-        } else { alert(data.mensaje); boton.disabled=false; boton.textContent="Marcar video como visto"; }
-      }catch(e){ alert("No se pudo registrar el visto"); boton.disabled=false; }
+          boton.outerHTML = `<p style="color:green;text-align:center;font-weight:bold;">✅ Video visto el ${data.fecha}</p>`;
+        } else {
+          alert(data.mensaje);
+          boton.disabled = false;
+          boton.textContent = "Marcar video como visto";
+        }
+      } catch(e){
+        alert("No se pudo registrar el visto");
+        boton.disabled = false;
+      }
     }
 
-    function logout(){ sessionStorage.clear(); window.location.href="index.html"; }
+    function logout(){
+      sessionStorage.clear();
+      window.location.href = "index.html";
+    }
 
-    const cont=document.getElementById("contenedorModulos");
-    moduloKeys.forEach(k=>cont.insertAdjacentHTML("beforeend", crearModulo(k)));
+    cargarModulos();
   </script>
 </body>
 </html>
