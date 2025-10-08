@@ -5,17 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Capacitación</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; display: flex; flex-direction: column; min-height: 100vh; background: #f5f7fa; }
-    header { background: #0078d4; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-    main { flex: 1; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
-    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
-    iframe { border: none; width: 100%; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #f5f7fa;
+    }
+    header {
+      background: #0078d4;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    main {
+      flex: 1;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    .modulo {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .modulo h3 {
+      margin: 0;
+      padding: 10px;
+      background: #e9ecef;
+    }
+    iframe {
+      border: none;
+      width: 100%;
+    }
     .videoFrame { height: 240px; }
     .formFrame { height: 400px; }
-    .info { padding: 10px; background: #fafafa; border-top: 1px solid #eee; font-size: 14px; }
-    .btn-visto { margin: 10px auto; display: block; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .btn-visto:hover { background: #218838; }
+    .info {
+      padding: 10px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      font-size: 14px;
+    }
+    .btn-visto {
+      margin: 10px auto;
+      display: block;
+      padding: 8px 16px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-visto:hover {
+      background: #218838;
+    }
+    .alerta {
+      background: #ffcccc;
+      color: #b30000;
+      text-align: center;
+      font-weight: bold;
+      padding: 8px;
+    }
   </style>
 </head>
 <body>
@@ -49,7 +108,8 @@
       const [d,m,a] = fecha.split(/[\/ ]/);
       const f = new Date(`${a}-${m}-${d}`);
       const ahora = new Date();
-      const fven = new Date(f); fven.setFullYear(fven.getFullYear()+1);
+      const fven = new Date(f);
+      fven.setFullYear(fven.getFullYear()+1);
       return ahora > fven;
     }
 
@@ -70,11 +130,14 @@
       const esVencido = vencido(inicio);
       const aprobado = notaNum >= 14;
 
-      let contenido = `
-        <div class="modulo">
-          <h3>${nombre.toUpperCase()}</h3>
-          <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-      `;
+      let contenido = `<div class="modulo"><h3>${nombre.toUpperCase()}</h3>`;
+
+      // Si vencido o desaprobado → alerta
+      if ((!aprobado && nota) || esVencido) {
+        contenido += `<div class="alerta">⚠️ Su capacitación está vencida o desaprobada. Debe desarrollarla nuevamente.</div>`;
+      }
+
+      contenido += `<iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>`;
 
       if(!inicio || esVencido){
         contenido += `<button class="btn-visto" onclick="marcarVisto('${nombre}', this)">Marcar video como visto</button>`;
@@ -122,12 +185,14 @@
     }
 
     async function marcarVisto(modulo, boton){
-      boton.disabled = true; boton.textContent = "Registrando...";
+      boton.disabled = true;
+      boton.textContent = "Registrando...";
       try{
         const res = await fetch(`${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`);
         const data = await res.json();
         if(data.ok){
           boton.outerHTML = `<p style="color:green;text-align:center;font-weight:bold;">✅ Video visto el ${data.fecha}</p>`;
+          alert("✅ Video registrado correctamente. Ahora puede desarrollar el formulario.");
         } else {
           alert(data.mensaje);
           boton.disabled = false;
