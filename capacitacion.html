@@ -1,35 +1,130 @@
-function doGet(e) {
-  try {
-    const ss = SpreadsheetApp.openById("1aqXKp2XFTcDWw0VK72G_FkVp4MC9bjLqGnjhs14Ef6Y");
-    const hoja = ss.getSheets()[0];
-    const params = e.parameter;
-    const dni = params.dni || "";
-    const modulo = params.modulo || "";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capacitación SST</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
+    header { background: #0078d7; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    main { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
+    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
+    iframe { border: none; width: 100%; }
+    .videoFrame { height: 240px; }
+    .formFrame { height: 400px; display: none; }
+    .info { padding: 10px; font-size: 14px; background: #fafafa; border-top: 1px solid #eee; }
+    .btn-confirmar { margin: 10px auto; padding: 8px 16px; background: #0078d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-confirmar:hover { background: #005fa3; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>Plataforma de Capacitación SST</h2>
+    <button onclick="logout()">Cerrar sesión</button>
+  </header>
 
-    if (!dni || !modulo) return ContentService.createTextOutput(JSON.stringify({ ok:false, mensaje:"Faltan parámetros" })).setMimeType(ContentService.MimeType.JSON);
+  <main id="contenedorModulos"></main>
 
-    const data = hoja.getDataRange().getValues();
-    const header = data[0];
-    const colDni = header.indexOf("DNI/CE");
-    if (colDni === -1) return ContentService.createTextOutput(JSON.stringify({ ok:false, mensaje:"No hay columna DNI/CE" })).setMimeType(ContentService.MimeType.JSON);
+  <script>
+    // ✅ Configura tus URLs
+    const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
+    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-    const fila = data.findIndex((r,i) => i>0 && String(r[colDni]).trim() === dni.trim());
-    if (fila === -1) return ContentService.createTextOutput(JSON.stringify({ ok:false, mensaje:"Usuario no encontrado" })).setMimeType(ContentService.MimeType.JSON);
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    if (!user) window.location.href = "index.html";
 
-    const modulos = {
-      induccion: "VIDEO DE INDUCCION SST",
-      primerosAuxilios: "VIDEO DE PRIMEROS AUXILIOS",
-      ergonomia: "VIDEO DE ERGONOMIA EN EL TRABAJO",
-      epp: "VIDEO DE EPP"
-    };
+    const modulos = [
+      { key: "induccion", nombre: "Video de Inducción SST" },
+      { key: "primerosAuxilios", nombre: "Video de Primeros Auxilios" },
+      { key: "ergonomia", nombre: "Video de Ergonomía en el Trabajo" },
+      { key: "epp", nombre: "Video de EPP" }
+    ];
 
-    const colBase = header.indexOf(modulos[modulo]);
-    const fechaActual = Utilities.formatDate(new Date(), "GMT-5", "dd/MM/yyyy HH:mm");
-    hoja.getRange(fila + 1, colBase + 1).setValue(fechaActual);
+    function transformarVideo(link) {
+      return link?.replace("/view", "/preview") || "";
+    }
 
-    return ContentService.createTextOutput(JSON.stringify({ ok:true, mensaje: fechaActual })).setMimeType(ContentService.MimeType.JSON);
+    function transformarForm(link) {
+      if (!link) return "";
+      return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
+    }
 
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ ok:false, mensaje: err.message })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
+    async function obtenerCSV(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      return text.trim().split("\n").map(r => r.split(","));
+    }
+
+    async function obtenerLinks() {
+      const hoja2 = await obtenerCSV(URL_HOJA2);
+      const headers = hoja2[0];
+      const fila = hoja2[1];
+
+      return {
+        induccion: { video: fila[headers.indexOf("LINK VIDEO DE INDUCCION SST")], form: fila[headers.indexOf("LINK EVALUACION")] },
+        primerosAuxilios: { video: fila[headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))) },
+        ergonomia: { video: fila[headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))) },
+        epp: { video: fila[headers.indexOf("LINK VIDEO DE EPP")], form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE EPP"))) }
+      };
+    }
+
+    async function cargarModulos() {
+      const links = await obtenerLinks();
+      const cont = document.getElementById("contenedorModulos");
+      cont.innerHTML = "";
+
+      modulos.forEach(m => {
+        const videoSrc = transformarVideo(links[m.key].video);
+        const formSrc = transformarForm(links[m.key].form);
+        const html = `
+          <div class="modulo" id="mod-${m.key}">
+            <h3>${m.nombre}</h3>
+            <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+            <div style="text-align:center;">
+              <button class="btn-confirmar" onclick="confirmarVisto('${m.key}')">Confirmar que vi el video</button>
+            </div>
+            <iframe class="formFrame" id="form-${m.key}" src="${formSrc}"></iframe>
+            <div class="info" id="info-${m.key}">Estado: Pendiente</div>
+          </div>
+        `;
+        cont.insertAdjacentHTML("beforeend", html);
+      });
+    }
+
+    async function confirmarVisto(modulo) {
+      const btn = document.querySelector(`#mod-${modulo} .btn-confirmar`);
+      btn.disabled = true;
+      btn.textContent = "Enviando...";
+
+      try {
+        const dni = user.dni;
+        const res = await fetch(`${API_URL}?action=registrar&dni=${dni}&modulo=${modulo}`);
+        const data = await res.json();
+
+        if (data.ok) {
+          btn.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ Confirmado el ${data.mensaje}</p>`;
+          document.getElementById(`form-${modulo}`).style.display = "block";
+          document.getElementById(`info-${modulo}`).innerHTML = `Estado: En desarrollo<br>${data.mensaje}`;
+        } else {
+          alert("Error: " + data.mensaje);
+          btn.disabled = false;
+          btn.textContent = "Confirmar que vi el video";
+        }
+      } catch (err) {
+        alert("Error al registrar: " + err.message);
+        btn.disabled = false;
+        btn.textContent = "Confirmar que vi el video";
+      }
+    }
+
+    function logout() {
+      sessionStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    cargarModulos();
+  </script>
+</body>
+</html>
+
