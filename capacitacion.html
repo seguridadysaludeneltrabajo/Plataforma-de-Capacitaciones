@@ -26,15 +26,8 @@
 
   <main id="contenedorModulos"></main>
 
-  <!-- 🧩 FORMULARIO OCULTO PARA ENVIAR CONFIRMACIÓN -->
-  <form id="formConfirmacion" method="GET" target="hiddenFrame" style="display:none;">
-    <input type="hidden" name="action" value="registrar">
-    <input type="hidden" name="dni" id="dniField">
-    <input type="hidden" name="modulo" id="moduloField">
-  </form>
-  <iframe name="hiddenFrame" style="display:none;"></iframe>
-
   <script>
+    // ✅ Configura tus URLs
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
@@ -63,16 +56,29 @@
       return text.trim().split("\n").map(r => r.split(","));
     }
 
+    // ✅ Corrección de paréntesis y estructura
     async function obtenerLinks() {
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const headers = hoja2[0];
       const fila = hoja2[1];
 
       return {
-        induccion: { video: fila[headers.indexOf("LINK VIDEO DE INDUCCION SST")], form: fila[headers.indexOf("LINK EVALUACION")] },
-        primerosAuxilios: { video: fila[headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))) },
-        ergonomia: { video: fila[headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))) },
-        epp: { video: fila[headers.indexOf("LINK VIDEO DE EPP")], form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE EPP"))) }
+        induccion: {
+          video: fila[headers.indexOf("LINK VIDEO DE INDUCCION SST")],
+          form: fila[headers.indexOf("LINK EVALUACION")]
+        },
+        primerosAuxilios: {
+          video: fila[headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")],
+          form: fila[headers.indexOf("LINK EVALUACION 1")] || fila[headers.indexOf("LINK EVALUACION_1")] || fila[headers.indexOf("LINK EVALUACION")]
+        },
+        ergonomia: {
+          video: fila[headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")],
+          form: fila[headers.indexOf("LINK EVALUACION 2")] || fila[headers.indexOf("LINK EVALUACION_2")] || fila[headers.indexOf("LINK EVALUACION")]
+        },
+        epp: {
+          video: fila[headers.indexOf("LINK VIDEO DE EPP")],
+          form: fila[headers.indexOf("LINK EVALUACION 3")] || fila[headers.indexOf("LINK EVALUACION_3")] || fila[headers.indexOf("LINK EVALUACION")]
+        }
       };
     }
 
@@ -99,18 +105,31 @@
       });
     }
 
-    function confirmarVisto(modulo) {
-      const dni = user.dni;
-      const form = document.getElementById("formConfirmacion");
-      document.getElementById("dniField").value = dni;
-      document.getElementById("moduloField").value = modulo;
-      form.action = API_URL;
-      form.submit();
-
+    // ✅ Registrar marca temporal y habilitar formulario
+    async function confirmarVisto(modulo) {
       const btn = document.querySelector(`#mod-${modulo} .btn-confirmar`);
-      btn.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ Confirmado, marca temporal enviada</p>`;
-      document.getElementById(`form-${modulo}`).style.display = "block";
-      document.getElementById(`info-${modulo}`).innerHTML = "Estado: En desarrollo (ya registrado)";
+      btn.disabled = true;
+      btn.textContent = "Enviando...";
+
+      try {
+        const dni = user.dni;
+        const res = await fetch(`${API_URL}?action=registrar&dni=${dni}&modulo=${modulo}`);
+        const data = await res.json();
+
+        if (data.ok) {
+          btn.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ ${data.mensaje}</p>`;
+          document.getElementById(`form-${modulo}`).style.display = "block";
+          document.getElementById(`info-${modulo}`).innerHTML = `Estado: En desarrollo<br>${data.mensaje}`;
+        } else {
+          alert("Error: " + data.mensaje);
+          btn.disabled = false;
+          btn.textContent = "Confirmar que vi el video";
+        }
+      } catch (err) {
+        alert("Error al registrar: " + err.message);
+        btn.disabled = false;
+        btn.textContent = "Confirmar que vi el video";
+      }
     }
 
     function logout() {
