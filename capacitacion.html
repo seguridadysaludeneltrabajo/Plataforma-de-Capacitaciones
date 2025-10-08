@@ -5,73 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Capacitación SST</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-    }
-    header {
-      background: #0078d7;
-      color: white;
-      padding: 12px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    main {
-      padding: 20px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 20px;
-    }
-    .modulo {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .modulo h3 {
-      margin: 0;
-      padding: 10px;
-      background: #e9ecef;
-    }
-    iframe {
-      border: none;
-      width: 100%;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
+    header { background: #0078d7; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    main { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
+    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
+    iframe { border: none; width: 100%; }
     .videoFrame { height: 240px; }
     .formFrame { height: 400px; display: none; }
-    .info {
-      padding: 10px;
-      font-size: 14px;
-      background: #fafafa;
-      border-top: 1px solid #eee;
-    }
-    .btn-confirmar {
-      margin: 10px auto;
-      padding: 8px 16px;
-      background: #0078d4;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+    .info { padding: 10px; font-size: 14px; background: #fafafa; border-top: 1px solid #eee; }
+    .btn-confirmar { margin: 10px auto; padding: 8px 16px; background: #0078d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .btn-confirmar:hover { background: #005fa3; }
-    .notificacion {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #0078d4;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 6px;
-      display: none;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-    }
+    .notificacion { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0078d4; color: white; padding: 10px 20px; border-radius: 6px; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
   </style>
 </head>
 <body>
@@ -84,10 +29,10 @@
   <div id="notificacion" class="notificacion"></div>
 
   <script>
-    // ✅ Apps Script que escribe en tu hoja
+    // ✅ Apps Script que escribe en tu hoja (usa doPost)
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
 
-    // ✅ Hoja 2 con los links
+    // ✅ Hoja 2 con los links de videos y formularios
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
     const user = JSON.parse(sessionStorage.getItem("user"));
@@ -100,7 +45,6 @@
       { key: "epp", nombre: "Video de EPP" }
     ];
 
-    // Transformar link de Google Drive a embed
     function transformarVideo(link) {
       return link?.replace("/view", "/preview") || "";
     }
@@ -109,7 +53,6 @@
       return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
     }
 
-    // ✅ Leer CSV sin fetch CORS (mediante <iframe> invisible)
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
@@ -154,13 +97,7 @@
             <h3>${m.nombre}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
 
-            <!-- FORMULARIO directo al Apps Script -->
-            <form action="${API_URL}" method="GET" target="oculto" onsubmit="return mostrarFormulario('${m.key}')">
-              <input type="hidden" name="action" value="registrar">
-              <input type="hidden" name="dni" value="${user.dni}">
-              <input type="hidden" name="modulo" value="${m.key}">
-              <button type="submit" class="btn-confirmar">Confirmar que vi el video</button>
-            </form>
+            <button class="btn-confirmar" onclick="confirmarVisualizacion('${m.key}')">Confirmar que vi el video</button>
 
             <iframe class="formFrame" id="form-${m.key}" src="${formSrc}"></iframe>
             <div class="info" id="info-${m.key}">Estado: Pendiente</div>
@@ -170,15 +107,23 @@
       });
     }
 
-    // ✅ Muestra formulario de evaluación después de registrar
-    function mostrarFormulario(modulo) {
-      document.getElementById(`form-${modulo}`).style.display = "block";
-      document.getElementById(`info-${modulo}`).innerHTML = "✅ Confirmado. Marca registrada en la hoja.";
-      mostrarNotificacion(`Confirmación enviada para ${modulo.toUpperCase()}`);
-      return true; // permite enviar el form
+    async function confirmarVisualizacion(modulo) {
+      const datos = new FormData();
+      datos.append("dni", user.dni);
+      datos.append("modulo", modulo);
+
+      const respuesta = await fetch(API_URL, { method: "POST", body: datos });
+      const json = await respuesta.json();
+
+      if (json.status === "OK") {
+        document.getElementById(`form-${modulo}`).style.display = "block";
+        document.getElementById(`info-${modulo}`).innerHTML = json.message;
+        mostrarNotificacion("✅ Confirmación enviada: " + modulo.toUpperCase());
+      } else {
+        mostrarNotificacion("❌ " + json.message);
+      }
     }
 
-    // ✅ Notificación visual
     function mostrarNotificacion(msg) {
       const box = document.getElementById("notificacion");
       box.textContent = msg;
@@ -186,16 +131,13 @@
       setTimeout(() => (box.style.display = "none"), 3000);
     }
 
-    // ✅ Logout
     function logout() {
       sessionStorage.clear();
       window.location.href = "index.html";
     }
 
-    // iframe oculto para recibir respuesta del Apps Script
-    document.body.insertAdjacentHTML("beforeend", '<iframe name="oculto" style="display:none;"></iframe>');
-
     cargarModulos();
   </script>
 </body>
 </html>
+
