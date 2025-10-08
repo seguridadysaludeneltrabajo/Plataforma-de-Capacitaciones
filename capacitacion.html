@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capacitación SST</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
-    header { background: #0078d7; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-    main { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
-    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
-    iframe { border: none; width: 100%; }
-    .videoFrame { height: 240px; }
-    .formFrame { height: 420px; display: none; }
-    .info { padding: 10px; font-size: 14px; background: #fafafa; border-top: 1px solid #eee; }
-    .notificacion { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0078d4; color: white; padding: 10px 20px; border-radius: 6px; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
+    body { margin:0; font-family: Arial, sans-serif; background:#f4f6f9; }
+    header { background:#0078d7; color:white; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; }
+    main { padding:20px; display:grid; grid-template-columns:repeat(auto-fit,minmax(350px,1fr)); gap:20px; }
+    .modulo { background:white; border-radius:10px; box-shadow:0 3px 8px rgba(0,0,0,0.1); overflow:hidden; }
+    .modulo h3 { margin:0; padding:10px; background:#e9ecef; }
+    iframe { border:none; width:100%; }
+    .videoFrame { height:240px; }
+    .formFrame { height:400px; display:none; border-top:1px solid #eee; }
+    .info { padding:10px; font-size:14px; background:#fafafa; border-top:1px solid #eee; }
+    .notificacion { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#0078d4; color:white; padding:10px 20px; border-radius:6px; display:none; box-shadow:0 3px 6px rgba(0,0,0,0.3); }
   </style>
 </head>
 <body>
@@ -27,106 +27,86 @@
   <div id="notificacion" class="notificacion"></div>
 
   <script>
-    // ✅ URLs públicas de tus hojas
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
-const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
     const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "12345678" };
 
-    const modulos = [
-      { key: "induccion", nombre: "Video de Inducción SST" },
-      { key: "primerosAuxilios", nombre: "Video de Primeros Auxilios" },
-      { key: "ergonomia", nombre: "Video de Ergonomía en el Trabajo" },
-      { key: "epp", nombre: "Video de EPP" }
-    ];
-
     function transformarVideo(link){return link?.includes("/view")?link.replace("/view","/preview"):link;}
-    function transformarForm(link){if(!link)return"";return link.includes("?")?link+"&embedded=true":link+"?embedded=true";}
+    function transformarForm(link){return link?(link.includes("?")?link+"&embedded=true":link+"?embedded=true"):"";}
 
     async function obtenerCSV(url){
-      const r=await fetch(url);
-      const t=await r.text();
+      const r=await fetch(url); const t=await r.text();
       return t.trim().split("\n").map(l=>l.split(","));
     }
 
-    async function obtenerLinks(){
-      const d=await obtenerCSV(URL_HOJA2);
-      const h=d[0];const f=d[1];
-      const v=n=>f[h.indexOf(n)]||"";
-      return {
-        induccion:{video:v("LINK VIDEO DE INDUCCION SST"),form:v("LINK EVALUACION INDUCCION")},
-        primerosAuxilios:{video:v("LINK VIDEO DE PRIMEROS AUXILIOS"),form:v("LINK EVALUACION PRIMEROS AUXILIOS")},
-        ergonomia:{video:v("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"),form:v("LINK EVALUACION ERGONOMIA")},
-        epp:{video:v("LINK VIDEO DE EPP"),form:v("LINK EVALUACION EPP")}
-      };
-    }
-
-    async function obtenerDatosUsuario(){
-      const d=await obtenerCSV(URL_HOJA1);
-      const h=d[0];
-      const colDni=h.indexOf("DNI/CE");
-      const fila=d.find(row=>row[colDni]?.trim()===user.dni);
-      return {h,fila};
-    }
-
-    function sumarMeses(fechaStr, meses){
-      const [d,m,y]=fechaStr.split("/").map(Number);
-      const fecha=new Date(y,m-1,d);
-      fecha.setMonth(fecha.getMonth()+meses);
-      const dd=String(fecha.getDate()).padStart(2,"0");
-      const mm=String(fecha.getMonth()+1).padStart(2,"0");
-      const yy=fecha.getFullYear();
-      return `${dd}/${mm}/${yy}`;
+    function calcularVencimiento(fechaStr){
+      if(!fechaStr) return null;
+      const [d,m,a]=fechaStr.split("/");
+      const f=new Date(`${a}-${m}-${d}`);
+      f.setFullYear(f.getFullYear()+1); // vence 1 año después
+      return f;
     }
 
     async function cargarModulos(){
-      const links=await obtenerLinks();
-      const {h,fila}=await obtenerDatosUsuario();
-      const cont=document.getElementById("contenedorModulos");
+      const hoja1 = await obtenerCSV(URL_HOJA1);
+      const hoja2 = await obtenerCSV(URL_HOJA2);
+
+      const header1 = hoja1[0];
+      const filaUsuario = hoja1.find(f => f[header1.indexOf("DNI/CE")]?.trim() === user.dni.trim());
+      const h2 = hoja2[0], f2 = hoja2[1];
+
+      const links = {
+        induccion: { video:f2[h2.indexOf("LINK VIDEO DE INDUCCION SST")], form:f2[h2.indexOf("LINK EVALUACION INDUCCION")] },
+        primerosAuxilios: { video:f2[h2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form:f2[h2.indexOf("LINK EVALUACION PRIMEROS AUXILIOS")] },
+        ergonomia: { video:f2[h2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form:f2[h2.indexOf("LINK EVALUACION ERGONOMIA")] },
+        epp: { video:f2[h2.indexOf("LINK VIDEO DE EPP")], form:f2[h2.indexOf("LINK EVALUACION EPP")] }
+      };
+
+      const modulos = [
+        { key:"induccion", nombre:"Inducción SST" },
+        { key:"primerosAuxilios", nombre:"Primeros Auxilios" },
+        { key:"ergonomia", nombre:"Ergonomía en el Trabajo" },
+        { key:"epp", nombre:"EPP" }
+      ];
+
+      const cont = document.getElementById("contenedorModulos");
       cont.innerHTML="";
 
-      if(!fila){ cont.innerHTML="<p>No se encontró el usuario.</p>"; return; }
-
       modulos.forEach(m=>{
-        const videoSrc=transformarVideo(links[m.key].video);
-        const formSrc=transformarForm(links[m.key].form);
+        const colVideo = header1.indexOf(`VIDEO DE ${m.nombre.toUpperCase()}`);
+        const colNota = header1.indexOf("NOTA");
+        const colFecha = header1.indexOf("FECHA DE INICIO");
 
-        // Encontrar columnas
-        const colVideo=h.indexOf(`VIDEO DE ${m.nombre.split(" ")[2].toUpperCase()} ${m.nombre.split(" ")[3]?.toUpperCase()||""}`.trim());
-        const colNota=h.indexOf("NOTA", colVideo);
-        const colFecha=h.indexOf("FECHA DE INICIO", colNota);
+        const fechaInicio = filaUsuario?.[colFecha] || "";
+        const nota = parseFloat(filaUsuario?.[colNota]) || 0;
+        const vence = calcularVencimiento(fechaInicio);
+        const hoy = new Date();
+        const vencido = vence && hoy > vence;
 
-        const nota=parseFloat(fila[colNota]||"0");
-        const fechaInicio=fila[colFecha]||"";
-        let estadoHTML="";
+        let estadoTxt = "";
+        let mostrarForm = false;
 
-        if(nota>12 && fechaInicio){
-          const vencimiento=sumarMeses(fechaInicio,12);
-          const hoy=new Date();
-          const [vd,vm,vy]=vencimiento.split("/").map(Number);
-          const fechaV=new Date(vy,vm-1,vd);
-          if(hoy<=fechaV){
-            estadoHTML=`<div class="info">✅ Aprobado el ${fechaInicio}<br>📅 Vence el ${vencimiento}</div>`;
-          } else {
-            estadoHTML=`<div class="info">⚠️ Capacitación vencida el ${vencimiento}<br>Debe volver a rendir la evaluación.</div>
-            <iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>`;
-          }
+        if (!nota || nota < 13 || vencido){
+          estadoTxt = vencido ? `⚠️ Capacitación vencida el ${vence.toLocaleDateString()}` : "🕓 Pendiente de aprobación";
+          mostrarForm = true;
         } else {
-          estadoHTML=`<iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>
-          <div class="info">🕓 Pendiente de evaluación</div>`;
+          estadoTxt = `✅ Aprobado (${nota}) - Vence el ${vence.toLocaleDateString()}`;
         }
 
-        const html=`
+        const html = `
         <div class="modulo">
           <h3>${m.nombre}</h3>
-          <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-          ${estadoHTML}
+          <iframe class="videoFrame" src="${transformarVideo(links[m.key].video)}"></iframe>
+          <div class="info">${estadoTxt}</div>
+          ${mostrarForm ? `<iframe class="formFrame" style="display:block;" src="${transformarForm(links[m.key].form)}"></iframe>` : ""}
         </div>`;
-        cont.insertAdjacentHTML("beforeend",html);
+        cont.insertAdjacentHTML("beforeend", html);
       });
     }
 
     function logout(){sessionStorage.clear();window.location.href="index.html";}
+
     cargarModulos();
   </script>
 </body>
