@@ -11,18 +11,23 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      background: #f3f3f3;
     }
     header {
-      background: #0078d4; color: white;
+      background: #0078d4;
+      color: white;
       padding: 10px 20px;
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    header h2 {
-      margin: 0;
-    }
+    header h2 { margin: 0; }
     button {
-      background: #ff4d4d; color: white; border: none;
-      padding: 8px 14px; border-radius: 5px;
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 5px;
       cursor: pointer;
     }
     main {
@@ -54,22 +59,19 @@
     }
     .formFrame {
       height: 380px;
+      filter: blur(3px);
+      pointer-events: none;
+      transition: 0.4s ease;
+    }
+    .formFrame.activo {
+      filter: blur(0);
+      pointer-events: all;
     }
     .info {
       padding: 10px;
       background: #fafafa;
       border-top: 1px solid #eee;
       font-size: 14px;
-    }
-    .btn-visto {
-      margin: 10px auto;
-      display: block;
-      padding: 6px 12px;
-      background: #28a745;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -84,46 +86,27 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
     const user = JSON.parse(sessionStorage.getItem("user"));
-    
-    if (!user) {
-      window.location.href = "index.html";
-    }
+    if (!user) window.location.href = "index.html";
 
     const moduloKeys = ["induccion", "primerosAuxilios", "ergonomia", "epp"];
 
-    function transformToPreview(driveLink) {
-      if (!driveLink) return "";
-      return driveLink.replace("/view", "/preview");
+    function transformToPreview(link) {
+      return link ? link.replace("/view", "/preview") : "";
     }
-
-    function transformToEmbeddedForm(formLink) {
-      if (!formLink) return "";
-      if (formLink.includes("?")) {
-        return formLink + "&embedded=true";
-      }
-      return formLink + "?embedded=true";
+    function transformToEmbeddedForm(link) {
+      return link ? link + (link.includes("?") ? "&embedded=true" : "?embedded=true") : "";
     }
 
     function crearModulo(key) {
-      const linkObj = user.links?.[key] || {};
-      const estado = user.modulos?.[key]?.visto || "";
-      const nota = user.modulos?.[key]?.nota || "";
-      const inicio = user.modulos?.[key]?.inicio || "";
-
-      const videoSrc = transformToPreview(linkObj.video || "");
-      const formSrc = transformToEmbeddedForm(linkObj.form || "");
-
+      const linkObj = user.links[key] || {};
+      const videoSrc = transformToPreview(linkObj.video);
+      const formSrc = transformToEmbeddedForm(linkObj.form);
       return `
-        <div class="modulo">
+        <div class="modulo" id="mod-${key}">
           <h3>Módulo: ${key}</h3>
-          <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-          <button class="btn-visto" onclick="marcarVisto('${key}')">✅ Marcar video como visto</button>
-          <iframe class="formFrame" src="${formSrc}"></iframe>
-          <div class="info">
-            Estado del video: ${estado} <br>
-            Nota: ${nota} <br>
-            Fecha de inicio: ${inicio}
-          </div>
+          <iframe class="videoFrame" id="vid-${key}" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+          <iframe class="formFrame" id="form-${key}" src="${formSrc}"></iframe>
+          <div class="info" id="info-${key}">⏳ Esperando que el video sea visto (3 minutos)...</div>
         </div>
       `;
     }
@@ -133,11 +116,11 @@
       try {
         const res = await fetch(url);
         const data = await res.json();
-        alert(data.mensaje);
-        location.reload();
+        document.getElementById(`info-${modulo}`).innerText = data.mensaje;
+        document.getElementById(`form-${modulo}`).classList.add("activo");
       } catch (err) {
         console.error("Error al marcar visto:", err);
-        alert("No se pudo registrar el visto");
+        document.getElementById(`info-${modulo}`).innerText = "⚠️ Error al registrar el visto. Verifica conexión o CORS.";
       }
     }
 
@@ -146,10 +129,15 @@
       window.location.href = "index.html";
     }
 
-    // Generar los módulos en el contenedor
+    // Crear módulos
     const cont = document.getElementById("contenedorModulos");
     moduloKeys.forEach(key => {
       cont.insertAdjacentHTML("beforeend", crearModulo(key));
+
+      // Marca automática después de 3 minutos (180000 ms)
+      setTimeout(() => {
+        marcarVisto(key);
+      }, 180000);
     });
   </script>
 </body>
