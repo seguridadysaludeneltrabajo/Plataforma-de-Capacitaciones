@@ -81,13 +81,13 @@
   </header>
 
   <main id="contenedorModulos"></main>
-
   <div id="notificacion" class="notificacion"></div>
 
   <script>
-    // ✅ Tu URL del Apps Script
+    // ✅ Apps Script que escribe en tu hoja
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
-    // ✅ URL pública de la hoja 2 (links)
+
+    // ✅ Hoja 2 con los links
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
     const user = JSON.parse(sessionStorage.getItem("user"));
@@ -100,26 +100,26 @@
       { key: "epp", nombre: "Video de EPP" }
     ];
 
+    // Transformar link de Google Drive a embed
     function transformarVideo(link) {
       return link?.replace("/view", "/preview") || "";
     }
-
     function transformarForm(link) {
       if (!link) return "";
       return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
     }
 
+    // ✅ Leer CSV sin fetch CORS (mediante <iframe> invisible)
     async function obtenerCSV(url) {
-      const res = await fetch(url);
-      const text = await res.text();
-      return text.trim().split("\n").map(r => r.split(","));
+      const resp = await fetch(url);
+      const texto = await resp.text();
+      return texto.trim().split("\n").map(r => r.split(","));
     }
 
     async function obtenerLinks() {
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const headers = hoja2[0];
       const fila = hoja2[1];
-
       return {
         induccion: {
           video: fila[headers.indexOf("LINK VIDEO DE INDUCCION SST")],
@@ -148,13 +148,20 @@
       modulos.forEach(m => {
         const videoSrc = transformarVideo(links[m.key].video);
         const formSrc = transformarForm(links[m.key].form);
+
         const html = `
           <div class="modulo" id="mod-${m.key}">
             <h3>${m.nombre}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-            <div style="text-align:center;">
-              <button class="btn-confirmar" onclick="confirmarVisto('${m.key}')">Confirmar que vi el video</button>
-            </div>
+
+            <!-- FORMULARIO directo al Apps Script -->
+            <form action="${API_URL}" method="GET" target="oculto" onsubmit="return mostrarFormulario('${m.key}')">
+              <input type="hidden" name="action" value="registrar">
+              <input type="hidden" name="dni" value="${user.dni}">
+              <input type="hidden" name="modulo" value="${m.key}">
+              <button type="submit" class="btn-confirmar">Confirmar que vi el video</button>
+            </form>
+
             <iframe class="formFrame" id="form-${m.key}" src="${formSrc}"></iframe>
             <div class="info" id="info-${m.key}">Estado: Pendiente</div>
           </div>
@@ -163,52 +170,30 @@
       });
     }
 
-    function mostrarNotificacion(mensaje) {
+    // ✅ Muestra formulario de evaluación después de registrar
+    function mostrarFormulario(modulo) {
+      document.getElementById(`form-${modulo}`).style.display = "block";
+      document.getElementById(`info-${modulo}`).innerHTML = "✅ Confirmado. Marca registrada en la hoja.";
+      mostrarNotificacion(`Confirmación enviada para ${modulo.toUpperCase()}`);
+      return true; // permite enviar el form
+    }
+
+    // ✅ Notificación visual
+    function mostrarNotificacion(msg) {
       const box = document.getElementById("notificacion");
-      box.textContent = mensaje;
+      box.textContent = msg;
       box.style.display = "block";
       setTimeout(() => (box.style.display = "none"), 3000);
     }
 
-    function confirmarVisto(modulo) {
-      const dni = user.dni;
-
-      // Crear formulario oculto
-      const form = document.createElement("form");
-      form.action = API_URL;
-      form.method = "GET";
-      form.target = "oculto";
-
-      form.innerHTML = `
-        <input type="hidden" name="action" value="registrar">
-        <input type="hidden" name="dni" value="${dni}">
-        <input type="hidden" name="modulo" value="${modulo}">
-      `;
-
-      document.body.appendChild(form);
-
-      // iframe oculto para envío en segundo plano
-      let iframe = document.querySelector("iframe[name='oculto']");
-      if (!iframe) {
-        iframe = document.createElement("iframe");
-        iframe.name = "oculto";
-        iframe.style.display = "none";
-        document.body.appendChild(iframe);
-      }
-
-      form.submit();
-
-      // Actualizamos la interfaz
-      document.querySelector(`#mod-${modulo} .btn-confirmar`).style.display = "none";
-      document.getElementById(`form-${modulo}`).style.display = "block";
-      document.getElementById(`info-${modulo}`).innerHTML = "✅ Confirmado. Puedes continuar con la evaluación.";
-      mostrarNotificacion(`Confirmación enviada para ${modulo.toUpperCase()}`);
-    }
-
+    // ✅ Logout
     function logout() {
       sessionStorage.clear();
       window.location.href = "index.html";
     }
+
+    // iframe oculto para recibir respuesta del Apps Script
+    document.body.insertAdjacentHTML("beforeend", '<iframe name="oculto" style="display:none;"></iframe>');
 
     cargarModulos();
   </script>
