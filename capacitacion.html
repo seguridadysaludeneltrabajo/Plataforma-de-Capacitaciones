@@ -16,7 +16,6 @@
     .info { padding:10px; background:#fafafa; border-top:1px solid #eee; text-align:center; font-size:14px; }
     .btn { margin:10px auto; padding:8px 16px; background:#0078d4; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; display:block; }
     .btn:hover { background:#005fa3; }
-    .alerta { background:#ffe0e0; color:#b30000; text-align:center; font-weight:bold; padding:8px; }
     #invisibleFrame { display:none; }
   </style>
 </head>
@@ -28,7 +27,6 @@
 
   <main id="contenedorModulos"></main>
 
-  <!-- Iframe oculto para envío sin CORS -->
   <iframe id="invisibleFrame" name="invisibleFrame"></iframe>
 
   <script>
@@ -74,21 +72,19 @@
     function crearModulo(nombre, key, video, form, nota, inicio) {
       const v = transformarVideo(video);
       const f = transformarForm(form);
-
-      let html = `<div class="modulo" id="mod-${key}"><h3>${nombre}</h3>`;
-      html += `<iframe class="videoFrame" src="${v}"></iframe>`;
-      html += `
-        <form method="GET" action="${API_URL}" target="invisibleFrame" onsubmit="enviarConfirmacion('${key}', this); return false;">
-          <input type="hidden" name="action" value="registrar">
-          <input type="hidden" name="dni" value="${user.dni}">
-          <input type="hidden" name="modulo" value="${key}">
-          <button class="btn" type="submit">Confirmar que vi el video</button>
-        </form>
-      `;
-      html += `<div class="info" id="estado-${key}">${inicio ? '✅ Registrado: ' + inicio : '⏳ Aún sin confirmar'}</div>`;
-      html += `<iframe class="formFrame" id="form-${key}" src="${f}"></iframe>`;
-      html += `</div>`;
-      return html;
+      return `
+        <div class="modulo" id="mod-${key}">
+          <h3>${nombre}</h3>
+          <iframe class="videoFrame" src="${v}"></iframe>
+          <form method="GET" action="${API_URL}" target="invisibleFrame" onsubmit="enviarConfirmacion('${key}', this); return false;">
+            <input type="hidden" name="action" value="registrar">
+            <input type="hidden" name="dni" value="${user.dni}">
+            <input type="hidden" name="modulo" value="${key}">
+            <button class="btn" type="submit">Confirmar que vi el video</button>
+          </form>
+          <div class="info" id="estado-${key}">${inicio ? '✅ Registrado: ' + inicio : '⏳ Aún sin confirmar'}</div>
+          <iframe class="formFrame" id="form-${key}" src="${f}"></iframe>
+        </div>`;
     }
 
     async function cargarModulos() {
@@ -121,8 +117,8 @@
 
       setTimeout(() => {
         form.style.display = "none";
-        estado.innerHTML = "✅ Confirmado correctamente";
-        formEval.style.display = "block"; // mostrar evaluación
+        estado.innerHTML = "✅ Video confirmado correctamente";
+        formEval.style.display = "block";
       }, 2000);
     }
 
