@@ -12,10 +12,8 @@
     .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
     iframe { border: none; width: 100%; }
     .videoFrame { height: 240px; }
-    .formFrame { height: 400px; display: none; }
+    .formFrame { height: 420px; display: none; }
     .info { padding: 10px; font-size: 14px; background: #fafafa; border-top: 1px solid #eee; }
-    .btn-confirmar { margin: 10px auto; padding: 8px 16px; background: #0078d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .btn-confirmar:hover { background: #005fa3; }
     .notificacion { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0078d4; color: white; padding: 10px 20px; border-radius: 6px; display: none; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
   </style>
 </head>
@@ -27,22 +25,27 @@
 
   <main id="contenedorModulos"></main>
   <div id="notificacion" class="notificacion"></div>
-  <iframe name="oculto" style="display:none;"></iframe>
 
   <script>
-    // ✅ URL del Apps Script publicado (reemplaza con tu deployment)
-    const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
+    // ✅ URLs públicas de tus hojas
+    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-XXXX/pub?gid=0&single=true&output=csv"; // reemplázala por tu hoja 1 publicada
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-    // ✅ Obtener el usuario logueado (DNI desde sesión)
     const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "12345678" };
 
-    // Utilidades para mostrar los videos y formularios
+    const modulos = [
+      { key: "induccion", nombre: "Video de Inducción SST" },
+      { key: "primerosAuxilios", nombre: "Video de Primeros Auxilios" },
+      { key: "ergonomia", nombre: "Video de Ergonomía en el Trabajo" },
+      { key: "epp", nombre: "Video de EPP" }
+    ];
+
     function transformarVideo(link){return link?.includes("/view")?link.replace("/view","/preview"):link;}
     function transformarForm(link){if(!link)return"";return link.includes("?")?link+"&embedded=true":link+"?embedded=true";}
 
     async function obtenerCSV(url){
-      const r=await fetch(url);const t=await r.text();
+      const r=await fetch(url);
+      const t=await r.text();
       return t.trim().split("\n").map(l=>l.split(","));
     }
 
@@ -58,62 +61,69 @@
       };
     }
 
+    async function obtenerDatosUsuario(){
+      const d=await obtenerCSV(URL_HOJA1);
+      const h=d[0];
+      const colDni=h.indexOf("DNI/CE");
+      const fila=d.find(row=>row[colDni]?.trim()===user.dni);
+      return {h,fila};
+    }
+
+    function sumarMeses(fechaStr, meses){
+      const [d,m,y]=fechaStr.split("/").map(Number);
+      const fecha=new Date(y,m-1,d);
+      fecha.setMonth(fecha.getMonth()+meses);
+      const dd=String(fecha.getDate()).padStart(2,"0");
+      const mm=String(fecha.getMonth()+1).padStart(2,"0");
+      const yy=fecha.getFullYear();
+      return `${dd}/${mm}/${yy}`;
+    }
+
     async function cargarModulos(){
       const links=await obtenerLinks();
+      const {h,fila}=await obtenerDatosUsuario();
       const cont=document.getElementById("contenedorModulos");
       cont.innerHTML="";
-      const modulos=[
-        {key:"induccion",nombre:"Video de Inducción SST"},
-        {key:"primerosAuxilios",nombre:"Video de Primeros Auxilios"},
-        {key:"ergonomia",nombre:"Video de Ergonomía en el Trabajo"},
-        {key:"epp",nombre:"Video de EPP"}
-      ];
+
+      if(!fila){ cont.innerHTML="<p>No se encontró el usuario.</p>"; return; }
 
       modulos.forEach(m=>{
         const videoSrc=transformarVideo(links[m.key].video);
         const formSrc=transformarForm(links[m.key].form);
+
+        // Encontrar columnas
+        const colVideo=h.indexOf(`VIDEO DE ${m.nombre.split(" ")[2].toUpperCase()} ${m.nombre.split(" ")[3]?.toUpperCase()||""}`.trim());
+        const colNota=h.indexOf("NOTA", colVideo);
+        const colFecha=h.indexOf("FECHA DE INICIO", colNota);
+
+        const nota=parseFloat(fila[colNota]||"0");
+        const fechaInicio=fila[colFecha]||"";
+        let estadoHTML="";
+
+        if(nota>12 && fechaInicio){
+          const vencimiento=sumarMeses(fechaInicio,12);
+          const hoy=new Date();
+          const [vd,vm,vy]=vencimiento.split("/").map(Number);
+          const fechaV=new Date(vy,vm-1,vd);
+          if(hoy<=fechaV){
+            estadoHTML=`<div class="info">✅ Aprobado el ${fechaInicio}<br>📅 Vence el ${vencimiento}</div>`;
+          } else {
+            estadoHTML=`<div class="info">⚠️ Capacitación vencida el ${vencimiento}<br>Debe volver a rendir la evaluación.</div>
+            <iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>`;
+          }
+        } else {
+          estadoHTML=`<iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>
+          <div class="info">🕓 Pendiente de evaluación</div>`;
+        }
+
         const html=`
-        <div class="modulo" id="mod-${m.key}">
+        <div class="modulo">
           <h3>${m.nombre}</h3>
           <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-
-          <!-- ✅ Formulario interno -->
-          <form action="${API_URL}" method="POST" target="oculto" onsubmit="return enviarConfirmacion(this, '${m.key}')">
-            <p style="margin:10px;">¿Viste el video?</p>
-            <label><input type="radio" name="visto" value="si" required> Sí</label>
-            <label style="margin-left:15px;"><input type="radio" name="visto" value="no" required> No</label><br>
-            <input type="hidden" name="dni" value="${user.dni}">
-            <input type="hidden" name="modulo" value="${m.key}">
-            <button type="submit" class="btn-confirmar">Confirmar</button>
-          </form>
-
-          <iframe class="formFrame" id="form-${m.key}" src="${formSrc}"></iframe>
-          <div class="info" id="info-${m.key}">Estado: 🕓 Pendiente</div>
+          ${estadoHTML}
         </div>`;
         cont.insertAdjacentHTML("beforeend",html);
       });
-    }
-
-    function enviarConfirmacion(form, modulo){
-      const opcion=form.visto.value;
-      if(opcion==="no"){
-        mostrarNotificacion("❌ Marca 'Sí' para confirmar que viste el video.");
-        return false;
-      }
-      mostrarNotificacion(`⏳ Enviando confirmación de ${modulo.toUpperCase()}...`);
-      document.getElementById(`info-${modulo}`).textContent="⏳ Enviando...";
-      setTimeout(()=>{
-        mostrarNotificacion(`✅ Confirmación registrada`);
-        document.getElementById(`form-${modulo}`).style.display="block"; // ✅ Mostrar evaluación
-        document.getElementById(`info-${modulo}`).textContent="✅ Video confirmado";
-      },2000);
-      return true; // Permite que el <form> se envíe al Apps Script
-    }
-
-    function mostrarNotificacion(msg){
-      const box=document.getElementById("notificacion");
-      box.textContent=msg;box.style.display="block";
-      setTimeout(()=>box.style.display="none",3000);
     }
 
     function logout(){sessionStorage.clear();window.location.href="index.html";}
