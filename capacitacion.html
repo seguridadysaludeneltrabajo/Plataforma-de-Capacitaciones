@@ -5,18 +5,81 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Capacitación</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; }
-    header { background: #0078d4; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-    main { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
-    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
-    iframe { border: none; width: 100%; }
-    .videoFrame { height: 240px; }
-    .formFrame { height: 400px; display: none; } /* Oculto al inicio */
-    .info { padding: 10px; background: #fafafa; border-top: 1px solid #eee; font-size: 14px; }
-    .btn-confirmar { margin: 10px auto; padding: 8px 16px; background: #0078d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .btn-confirmar:hover { background: #005fa3; }
-    .alerta { background: #ffcccc; color: #b30000; text-align: center; font-weight: bold; padding: 8px; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+    }
+    header {
+      background: #0078d4;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    main {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    .modulo {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modulo h3 {
+      margin: 0;
+      padding: 10px;
+      background: #e9ecef;
+    }
+    iframe {
+      border: none;
+      width: 100%;
+    }
+    .videoFrame {
+      height: 240px;
+    }
+    .formFrame {
+      height: 400px;
+      display: none;
+    }
+    .info {
+      padding: 10px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      font-size: 14px;
+    }
+    .btn-confirmar {
+      margin: 10px auto;
+      padding: 8px 16px;
+      background: #0078d4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn-confirmar:hover {
+      background: #005fa3;
+    }
+    .alerta {
+      background: #ffcccc;
+      color: #b30000;
+      text-align: center;
+      font-weight: bold;
+      padding: 8px;
+    }
+    .mensaje-ok {
+      text-align: center;
+      color: green;
+      font-weight: bold;
+      padding: 8px;
+    }
   </style>
 </head>
 <body>
@@ -24,6 +87,7 @@
     <h2>Plataforma de Capacitación</h2>
     <button onclick="logout()">Cerrar sesión</button>
   </header>
+
   <main id="contenedorModulos"></main>
 
   <script>
@@ -46,7 +110,7 @@
 
     const sumarUnAnio = fecha => {
       if (!fecha) return "";
-      const [d,m,a] = fecha.split(/[\/ ]/);
+      const [d, m, a] = fecha.split(/[\/ ]/);
       const f = new Date(`${a}-${m}-${d}`);
       f.setFullYear(f.getFullYear() + 1);
       return f.toLocaleDateString("es-PE");
@@ -54,7 +118,7 @@
 
     const vencido = fecha => {
       if (!fecha) return true;
-      const [d,m,a] = fecha.split(/[\/ ]/);
+      const [d, m, a] = fecha.split(/[\/ ]/);
       const f = new Date(`${a}-${m}-${d}`);
       const ahora = new Date();
       f.setFullYear(f.getFullYear() + 1);
@@ -113,10 +177,12 @@
       }
 
       if (!inicio || esVencido || !aprobado) {
-        html += `<iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+        html += `
+        <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
         <div style="text-align:center; margin-top:10px;">
           <button class="btn-confirmar" onclick="confirmarVisto('${key}')">Confirmar que vi el video</button>
         </div>
+        <div id="mensaje_${key}" class="mensaje-ok" style="display:none;">✅ Confirmación registrada. Ahora puedes realizar la evaluación.</div>
         <iframe id="form_${key}" class="formFrame" src="${formSrc}"></iframe>`;
       } else {
         html += `<p style="color:blue; text-align:center;">Capacitación vigente hasta ${sumarUnAnio(inicio)}</p>`;
@@ -158,14 +224,17 @@
     async function confirmarVisto(modulo) {
       const btn = document.querySelector(`#${modulo} .btn-confirmar`);
       const form = document.querySelector(`#form_${modulo}`);
+      const mensaje = document.querySelector(`#mensaje_${modulo}`);
+
       btn.disabled = true;
       btn.textContent = "Registrando...";
       try {
         const res = await fetch(`${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`);
         const data = await res.json();
         if (data.ok) {
-          btn.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ Confirmado el ${data.fecha}</p>`;
-          form.style.display = "block"; // Muestra el formulario recién ahora
+          btn.style.display = "none";
+          mensaje.style.display = "block";
+          form.style.display = "block";
         } else {
           alert(data.mensaje);
           btn.disabled = false;
