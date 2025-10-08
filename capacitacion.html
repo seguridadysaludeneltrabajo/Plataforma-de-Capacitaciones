@@ -1,78 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capacitación</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      background: #f3f3f3;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
     header {
-      background: #0078d4;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    header h2 { margin: 0; }
-    button {
-      background: #ff4d4d;
-      color: white;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 5px;
-      cursor: pointer;
+      background: #0078d4; color: white; padding: 10px 20px;
+      display: flex; justify-content: space-between; align-items: center;
     }
     main {
-      flex: 1;
       padding: 20px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 20px;
     }
     .modulo {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding-bottom: 15px;
     }
-    .modulo h3 {
-      margin: 0;
-      padding: 10px;
-      background: #f0f0f0;
+    .modulo h3 { background: #f0f0f0; margin: 0; padding: 10px; }
+    iframe { border: none; width: 100%; }
+    .videoFrame { height: 240px; }
+    .formFrame { height: 400px; display: none; }
+    .formFrame.activo { display: block; }
+    .info { padding: 10px; background: #fafafa; border-top: 1px solid #eee; font-size: 14px; }
+    .btn-visto {
+      display: block; margin: 10px auto;
+      padding: 8px 14px; border: none; border-radius: 6px;
+      background: #28a745; color: white; cursor: pointer; font-size: 15px;
     }
-    iframe {
-      border: none;
-      width: 100%;
-    }
-    .videoFrame {
-      height: 240px;
-    }
-    .formFrame {
-      height: 380px;
-      filter: blur(3px);
-      pointer-events: none;
-      transition: 0.4s ease;
-    }
-    .formFrame.activo {
-      filter: blur(0);
-      pointer-events: all;
-    }
-    .info {
-      padding: 10px;
-      background: #fafafa;
-      border-top: 1px solid #eee;
-      font-size: 14px;
-    }
+    .btn-visto[disabled] { background: gray; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -80,47 +39,66 @@
     <h2>Plataforma de Capacitación</h2>
     <button onclick="logout()">Cerrar sesión</button>
   </header>
-
   <main id="contenedorModulos"></main>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec; // cambia por tu enlace web publicado
     const user = JSON.parse(sessionStorage.getItem("user"));
     if (!user) window.location.href = "index.html";
 
-    const moduloKeys = ["induccion", "primerosAuxilios", "ergonomia", "epp"];
+    const modulos = ["induccion", "primerosAuxilios", "ergonomia", "epp"];
 
-    function transformToPreview(link) {
-      return link ? link.replace("/view", "/preview") : "";
-    }
-    function transformToEmbeddedForm(link) {
-      return link ? link + (link.includes("?") ? "&embedded=true" : "?embedded=true") : "";
+    function transformarVideo(link) { return link ? link.replace("/view", "/preview") : ""; }
+    function transformarForm(link) { return link ? link + (link.includes("?") ? "&" : "?") + "embedded=true" : ""; }
+
+    async function obtenerEstado() {
+      const res = await fetch(`${API_URL}?action=estado&dni=${user.dni}`);
+      const data = await res.json();
+      return data.modulos || {};
     }
 
-    function crearModulo(key) {
-      const linkObj = user.links[key] || {};
-      const videoSrc = transformToPreview(linkObj.video);
-      const formSrc = transformToEmbeddedForm(linkObj.form);
-      return `
-        <div class="modulo" id="mod-${key}">
-          <h3>Módulo: ${key}</h3>
-          <iframe class="videoFrame" id="vid-${key}" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-          <iframe class="formFrame" id="form-${key}" src="${formSrc}"></iframe>
-          <div class="info" id="info-${key}">⏳ Esperando que el video sea visto (3 minutos)...</div>
-        </div>
-      `;
+    async function construir() {
+      const estado = await obtenerEstado();
+      const cont = document.getElementById("contenedorModulos");
+
+      modulos.forEach(m => {
+        const info = estado[m] || {};
+        const linkObj = user.links[m];
+        const videoSrc = transformarVideo(linkObj.video);
+        const formSrc = transformarForm(linkObj.form);
+        const visto = !info.activo;
+        const inicio = info.inicio || "";
+        const venc = info.vencimiento || "";
+        const nota = info.nota || "";
+
+        cont.insertAdjacentHTML("beforeend", `
+          <div class="modulo" id="mod-${m}">
+            <h3>${m}</h3>
+            <iframe class="videoFrame" src="${videoSrc}"></iframe>
+            <button class="btn-visto" id="btn-${m}" ${visto ? "disabled" : ""} onclick="marcarVisto('${m}')">
+              ${visto ? "✅ Ya completado" : "Marcar video como visto"}
+            </button>
+            <iframe id="form-${m}" class="formFrame ${visto ? "activo" : ""}" src="${formSrc}"></iframe>
+            <div class="info">
+              Fecha inicio: ${inicio || "-"}<br>
+              Fecha vencimiento: ${venc || "-"}<br>
+              Nota: ${nota || "-"}
+            </div>
+          </div>
+        `);
+      });
     }
 
     async function marcarVisto(modulo) {
-      const url = `${API_URL}?action=registrar&dni=${encodeURIComponent(user.dni)}&modulo=${encodeURIComponent(modulo)}`;
+      const url = `${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`;
       try {
         const res = await fetch(url);
         const data = await res.json();
-        document.getElementById(`info-${modulo}`).innerText = data.mensaje;
+        alert(data.mensaje);
+        document.getElementById(`btn-${modulo}`).disabled = true;
         document.getElementById(`form-${modulo}`).classList.add("activo");
-      } catch (err) {
-        console.error("Error al marcar visto:", err);
-        document.getElementById(`info-${modulo}`).innerText = "⚠️ Error al registrar el visto. Verifica conexión o CORS.";
+      } catch {
+        alert("No se pudo registrar el visto");
       }
     }
 
@@ -129,16 +107,7 @@
       window.location.href = "index.html";
     }
 
-    // Crear módulos
-    const cont = document.getElementById("contenedorModulos");
-    moduloKeys.forEach(key => {
-      cont.insertAdjacentHTML("beforeend", crearModulo(key));
-
-      // Marca automática después de 3 minutos (180000 ms)
-      setTimeout(() => {
-        marcarVisto(key);
-      }, 180000);
-    });
+    construir();
   </script>
 </body>
 </html>
