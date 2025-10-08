@@ -24,6 +24,7 @@
     <h2>Plataforma de Capacitación</h2>
     <button onclick="logout()">Cerrar sesión</button>
   </header>
+
   <main id="contenedorModulos"></main>
 
   <script>
@@ -74,12 +75,26 @@
       const data1 = hoja1.slice(1);
       const data2 = hoja2.slice(1);
       const usuario = data1.find(r => r[headers1.indexOf("DNI/CE")].trim() === user.dni);
+
       const links = {
-        induccion: { video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")], form: data2[0][headers2.indexOf("LINK EVALUACION")] },
-        primerosAuxilios: { video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))) },
-        ergonomia: { video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))) },
-        epp: { video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))) }
+        induccion: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION")]
+        },
+        primerosAuxilios: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))]
+        },
+        ergonomia: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))]
+        },
+        epp: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))]
+        }
       };
+
       return { headers1, usuario, links };
     }
 
@@ -172,13 +187,6 @@
       sessionStorage.clear();
       window.location.href = "index.html";
     }
-
-    cargarModulos();
-  </script>
-</body>
-</html>
-
-
 
     cargarModulos();
   </script>
