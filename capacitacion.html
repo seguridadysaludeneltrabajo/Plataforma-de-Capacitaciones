@@ -5,17 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Capacitación SST</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
-    header { background: #0078d7; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-    main { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
-    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
-    iframe { border: none; width: 100%; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+    }
+    header {
+      background: #0078d7;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    main {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    .modulo {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modulo h3 {
+      margin: 0;
+      padding: 10px;
+      background: #e9ecef;
+    }
+    iframe {
+      border: none;
+      width: 100%;
+    }
     .videoFrame { height: 240px; }
     .formFrame { height: 400px; display: none; }
-    .info { padding: 10px; font-size: 14px; background: #fafafa; border-top: 1px solid #eee; }
-    .btn-confirmar { margin: 10px auto; padding: 8px 16px; background: #0078d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .info {
+      padding: 10px;
+      font-size: 14px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+    }
+    .btn-confirmar {
+      margin: 10px auto;
+      padding: 8px 16px;
+      background: #0078d4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
     .btn-confirmar:hover { background: #005fa3; }
+    .notificacion {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0078d4;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      display: none;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    }
   </style>
 </head>
 <body>
@@ -26,9 +82,12 @@
 
   <main id="contenedorModulos"></main>
 
+  <div id="notificacion" class="notificacion"></div>
+
   <script>
-    // ✅ Configura tus URLs
+    // ✅ Tu URL del Apps Script
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
+    // ✅ URL pública de la hoja 2 (links)
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
     const user = JSON.parse(sessionStorage.getItem("user"));
@@ -56,7 +115,6 @@
       return text.trim().split("\n").map(r => r.split(","));
     }
 
-    // ✅ Corrección de paréntesis y estructura
     async function obtenerLinks() {
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const headers = hoja2[0];
@@ -69,15 +127,15 @@
         },
         primerosAuxilios: {
           video: fila[headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")],
-          form: fila[headers.indexOf("LINK EVALUACION 1")] || fila[headers.indexOf("LINK EVALUACION_1")] || fila[headers.indexOf("LINK EVALUACION")]
+          form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))]
         },
         ergonomia: {
           video: fila[headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")],
-          form: fila[headers.indexOf("LINK EVALUACION 2")] || fila[headers.indexOf("LINK EVALUACION_2")] || fila[headers.indexOf("LINK EVALUACION")]
+          form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))]
         },
         epp: {
           video: fila[headers.indexOf("LINK VIDEO DE EPP")],
-          form: fila[headers.indexOf("LINK EVALUACION 3")] || fila[headers.indexOf("LINK EVALUACION_3")] || fila[headers.indexOf("LINK EVALUACION")]
+          form: fila[headers.indexOf("LINK EVALUACION", headers.indexOf("LINK VIDEO DE EPP"))]
         }
       };
     }
@@ -105,31 +163,46 @@
       });
     }
 
-    // ✅ Registrar marca temporal y habilitar formulario
-    async function confirmarVisto(modulo) {
-      const btn = document.querySelector(`#mod-${modulo} .btn-confirmar`);
-      btn.disabled = true;
-      btn.textContent = "Enviando...";
+    function mostrarNotificacion(mensaje) {
+      const box = document.getElementById("notificacion");
+      box.textContent = mensaje;
+      box.style.display = "block";
+      setTimeout(() => (box.style.display = "none"), 3000);
+    }
 
-      try {
-        const dni = user.dni;
-        const res = await fetch(`${API_URL}?action=registrar&dni=${dni}&modulo=${modulo}`);
-        const data = await res.json();
+    function confirmarVisto(modulo) {
+      const dni = user.dni;
 
-        if (data.ok) {
-          btn.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ ${data.mensaje}</p>`;
-          document.getElementById(`form-${modulo}`).style.display = "block";
-          document.getElementById(`info-${modulo}`).innerHTML = `Estado: En desarrollo<br>${data.mensaje}`;
-        } else {
-          alert("Error: " + data.mensaje);
-          btn.disabled = false;
-          btn.textContent = "Confirmar que vi el video";
-        }
-      } catch (err) {
-        alert("Error al registrar: " + err.message);
-        btn.disabled = false;
-        btn.textContent = "Confirmar que vi el video";
+      // Crear formulario oculto
+      const form = document.createElement("form");
+      form.action = API_URL;
+      form.method = "GET";
+      form.target = "oculto";
+
+      form.innerHTML = `
+        <input type="hidden" name="action" value="registrar">
+        <input type="hidden" name="dni" value="${dni}">
+        <input type="hidden" name="modulo" value="${modulo}">
+      `;
+
+      document.body.appendChild(form);
+
+      // iframe oculto para envío en segundo plano
+      let iframe = document.querySelector("iframe[name='oculto']");
+      if (!iframe) {
+        iframe = document.createElement("iframe");
+        iframe.name = "oculto";
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
       }
+
+      form.submit();
+
+      // Actualizamos la interfaz
+      document.querySelector(`#mod-${modulo} .btn-confirmar`).style.display = "none";
+      document.getElementById(`form-${modulo}`).style.display = "block";
+      document.getElementById(`info-${modulo}`).innerHTML = "✅ Confirmado. Puedes continuar con la evaluación.";
+      mostrarNotificacion(`Confirmación enviada para ${modulo.toUpperCase()}`);
     }
 
     function logout() {
