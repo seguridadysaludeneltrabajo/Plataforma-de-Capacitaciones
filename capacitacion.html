@@ -12,7 +12,7 @@
     .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
     iframe { border: none; width: 100%; }
     .videoFrame { height: 240px; }
-    .formFrame { height: 400px; }
+    .formFrame { height: 400px; display: none; } /* Oculto al inicio */
     .info { padding: 10px; background: #fafafa; border-top: 1px solid #eee; font-size: 14px; }
     .btn-confirmar { margin: 10px auto; padding: 8px 16px; background: #0078d4; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .btn-confirmar:hover { background: #005fa3; }
@@ -77,10 +77,22 @@
       const usuario = data1.find(r => r[headers1.indexOf("DNI/CE")].trim() === user.dni);
 
       const links = {
-        induccion: { video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")], form: data2[0][headers2.indexOf("LINK EVALUACION")] },
-        primerosAuxilios: { video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))) },
-        ergonomia: { video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))) },
-        epp: { video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))) }
+        induccion: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION")]
+        },
+        primerosAuxilios: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))]
+        },
+        ergonomia: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))]
+        },
+        epp: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))]
+        }
       };
 
       return { headers1, usuario, links };
@@ -93,26 +105,19 @@
       const esVencido = vencido(inicio);
       const aprobado = notaNum >= 14;
 
-      let html = `<div class="modulo"><h3>${nombre}</h3>`;
+      let html = `<div class="modulo" id="${key}">
+        <h3>${nombre}</h3>`;
 
       if ((nota && notaNum < 14) || esVencido) {
         html += `<div class="alerta">⚠️ Capacitación vencida o desaprobada. Debe desarrollarla nuevamente.</div>`;
       }
 
-      html += `<iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>`;
-
-      // Aquí reemplazamos el botón "Marcar visto" por un pequeño formulario de confirmación
-      html += `
-        <div style="text-align:center; margin-top:10px;">
-          <form onsubmit="return confirmarVisto('${key}', this)">
-            <input type="hidden" name="dni" value="${user.dni}">
-            <button type="submit" class="btn-confirmar">Confirmar que vi el video</button>
-          </form>
-        </div>
-      `;
-
       if (!inicio || esVencido || !aprobado) {
-        html += `<iframe class="formFrame" src="${formSrc}"></iframe>`;
+        html += `<iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+        <div style="text-align:center; margin-top:10px;">
+          <button class="btn-confirmar" onclick="confirmarVisto('${key}')">Confirmar que vi el video</button>
+        </div>
+        <iframe id="form_${key}" class="formFrame" src="${formSrc}"></iframe>`;
       } else {
         html += `<p style="color:blue; text-align:center;">Capacitación vigente hasta ${sumarUnAnio(inicio)}</p>`;
       }
@@ -129,42 +134,38 @@
     }
 
     async function cargarModulos() {
-      try {
-        const { headers1, usuario, links } = await obtenerDatos();
-        if (!usuario) throw new Error("Usuario no encontrado en la hoja");
+      const { headers1, usuario, links } = await obtenerDatos();
+      const cont = document.getElementById("contenedorModulos");
+      cont.innerHTML = "";
 
-        const cont = document.getElementById("contenedorModulos");
-        cont.innerHTML = "";
+      const columnas = {
+        induccion: "VIDEO DE INDUCCION SST",
+        primerosAuxilios: "VIDEO DE PRIMEROS AUXILIOS",
+        ergonomia: "VIDEO DE ERGONOMIA EN EL TRABAJO",
+        epp: "VIDEO DE EPP"
+      };
 
-        const columnas = {
-          induccion: "VIDEO DE INDUCCION SST",
-          primerosAuxilios: "VIDEO DE PRIMEROS AUXILIOS",
-          ergonomia: "VIDEO DE ERGONOMIA EN EL TRABAJO",
-          epp: "VIDEO DE EPP"
-        };
-
-        modulos.forEach(mod => {
-          const base = headers1.indexOf(columnas[mod.key]);
-          const nota = usuario[base + 1];
-          const inicio = usuario[base + 2];
-          cont.insertAdjacentHTML("beforeend", crearModulo(mod.nombre, mod.key, links[mod.key].video, links[mod.key].form, nota, inicio));
-        });
-      } catch (e) {
-        alert("Error al cargar módulos: " + e.message);
-        console.error(e);
-      }
+      modulos.forEach(mod => {
+        const base = headers1.indexOf(columnas[mod.key]);
+        const nota = usuario[base + 1];
+        const inicio = usuario[base + 2];
+        cont.insertAdjacentHTML("beforeend",
+          crearModulo(mod.nombre, mod.key, links[mod.key].video, links[mod.key].form, nota, inicio)
+        );
+      });
     }
 
-    async function confirmarVisto(modulo, form) {
-      const btn = form.querySelector("button");
+    async function confirmarVisto(modulo) {
+      const btn = document.querySelector(`#${modulo} .btn-confirmar`);
+      const form = document.querySelector(`#form_${modulo}`);
       btn.disabled = true;
-      btn.textContent = "Enviando...";
+      btn.textContent = "Registrando...";
       try {
-        const dni = form.querySelector("input[name='dni']").value;
-        const res = await fetch(`${API_URL}?action=registrar&dni=${dni}&modulo=${modulo}`);
+        const res = await fetch(`${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`);
         const data = await res.json();
         if (data.ok) {
-          form.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ Confirmado el ${data.fecha}</p>`;
+          btn.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ Confirmado el ${data.fecha}</p>`;
+          form.style.display = "block"; // Muestra el formulario recién ahora
         } else {
           alert(data.mensaje);
           btn.disabled = false;
@@ -175,7 +176,6 @@
         btn.disabled = false;
         btn.textContent = "Confirmar que vi el video";
       }
-      return false;
     }
 
     function logout() {
@@ -187,4 +187,3 @@
   </script>
 </body>
 </html>
-
