@@ -28,77 +28,89 @@
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
+    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
+    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+    
     const user = JSON.parse(sessionStorage.getItem("user"));
-    if (!user) {
-      window.location.href = "index.html";
-    }
+    if (!user) window.location.href = "index.html";
 
-    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1aqXKp2XFTcDWw0VK72G_FkVp4MC9bjLqGnjhs14Ef6Y/pub?gid=0&single=true&output=csv";
-    const modulos = ["induccion", "primerosAuxilios", "ergonomia", "epp"];
+    const modulos = [
+      { key: "induccion", nombre: "Video de Inducción SST" },
+      { key: "primerosAuxilios", nombre: "Video de Primeros Auxilios" },
+      { key: "ergonomia", nombre: "Video de Ergonomía en el Trabajo" },
+      { key: "epp", nombre: "Video de EPP" }
+    ];
 
-    function transformarVideo(link) {
-      return link?.replace("/view", "/preview") || "";
-    }
-    function transformarForm(link) {
-      if (!link) return "";
-      return link + (link.includes("?") ? "&embedded=true" : "?embedded=true");
-    }
+    const transformarVideo = link => link?.replace("/view", "/preview") || "";
+    const transformarForm = link => link ? (link.includes("?") ? link + "&embedded=true" : link + "?embedded=true") : "";
 
-    function sumarUnAnio(fecha) {
-      const [d, m, a] = fecha.split(/[\/ ]/);
+    const sumarUnAnio = fecha => {
+      if (!fecha) return "";
+      const [d,m,a] = fecha.split(/[\/ ]/);
       const f = new Date(`${a}-${m}-${d}`);
       f.setFullYear(f.getFullYear() + 1);
       return f.toLocaleDateString("es-PE");
-    }
+    };
 
-    function vencido(fecha) {
+    const vencido = fecha => {
       if (!fecha) return true;
-      const [d, m, a] = fecha.split(/[\/ ]/);
+      const [d,m,a] = fecha.split(/[\/ ]/);
       const f = new Date(`${a}-${m}-${d}`);
       const ahora = new Date();
-      const fven = new Date(f);
-      fven.setFullYear(fven.getFullYear() + 1);
-      return ahora > fven;
-    }
+      f.setFullYear(f.getFullYear() + 1);
+      return ahora > f;
+    };
 
-    async function obtenerDatosHoja() {
-      const res = await fetch(URL_HOJA1);
+    async function obtenerCSV(url) {
+      const res = await fetch(url);
       const text = await res.text();
-      const rows = text.trim().split("\n").map(r => r.split(","));
-      const headers = rows[0];
-      const data = rows.slice(1);
-      const usuario = data.find(r => r[headers.indexOf("DNI/CE")].trim() === user.dni);
-      return { headers, usuario };
+      return text.trim().split("\n").map(r => r.split(","));
     }
 
-    function crearModulo(nombre, video, form, nota, inicio) {
+    async function obtenerDatos() {
+      const [hoja1, hoja2] = await Promise.all([obtenerCSV(URL_HOJA1), obtenerCSV(URL_HOJA2)]);
+      const headers1 = hoja1[0];
+      const headers2 = hoja2[0];
+      const data1 = hoja1.slice(1);
+      const data2 = hoja2.slice(1);
+      const usuario = data1.find(r => r[headers1.indexOf("DNI/CE")].trim() === user.dni);
+      const links = {
+        induccion: { video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")], form: data2[0][headers2.indexOf("LINK EVALUACION")] },
+        primerosAuxilios: { video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))) },
+        ergonomia: { video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))) },
+        epp: { video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))) }
+      };
+      return { headers1, usuario, links };
+    }
+
+    function crearModulo(nombre, key, video, form, nota, inicio) {
       const videoSrc = transformarVideo(video);
       const formSrc = transformarForm(form);
       const notaNum = parseFloat(nota) || 0;
       const esVencido = vencido(inicio);
       const aprobado = notaNum >= 14;
 
-      let contenido = `<div class="modulo"><h3>${nombre.toUpperCase()}</h3>`;
+      let html = `<div class="modulo"><h3>${nombre}</h3>`;
 
       if ((nota && notaNum < 14) || esVencido) {
-        contenido += `<div class="alerta">⚠️ Su capacitación está vencida o desaprobada. Debe desarrollarla nuevamente.</div>`;
+        html += `<div class="alerta">⚠️ Capacitación vencida o desaprobada. Debe desarrollarla nuevamente.</div>`;
       }
 
-      contenido += `<iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>`;
+      html += `<iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>`;
 
       if (!inicio || esVencido) {
-        contenido += `<button class="btn-visto" onclick="marcarVisto('${nombre}', this)">Marcar video como visto</button>`;
+        html += `<button class="btn-visto" onclick="marcarVisto('${key}', this)">Marcar video como visto</button>`;
       } else {
-        contenido += `<p style="color:green; text-align:center; font-weight:bold;">✅ Video visto el ${inicio}</p>`;
+        html += `<p style="color:green; text-align:center; font-weight:bold;">✅ Video visto el ${inicio}</p>`;
       }
 
       if (!inicio || esVencido || !aprobado) {
-        contenido += `<iframe class="formFrame" src="${formSrc}"></iframe>`;
+        html += `<iframe class="formFrame" src="${formSrc}"></iframe>`;
       } else {
-        contenido += `<p style="color:blue; text-align:center;">Capacitación vigente hasta ${sumarUnAnio(inicio)}</p>`;
+        html += `<p style="color:blue; text-align:center;">Capacitación vigente hasta ${sumarUnAnio(inicio)}</p>`;
       }
 
-      contenido += `
+      html += `
         <div class="info">
           Estado: ${inicio ? (esVencido ? "Vencido" : "Vigente") : "Pendiente"}<br>
           Nota: ${nota || "—"}<br>
@@ -106,29 +118,33 @@
           Fecha de vencimiento: ${(inicio && !esVencido) ? sumarUnAnio(inicio) : "—"}
         </div>
       </div>`;
-      return contenido;
+      return html;
     }
 
     async function cargarModulos() {
-      const { headers, usuario } = await obtenerDatosHoja();
-      const cont = document.getElementById("contenedorModulos");
-      cont.innerHTML = "";
+      try {
+        const { headers1, usuario, links } = await obtenerDatos();
+        if (!usuario) throw new Error("Usuario no encontrado en la hoja");
+        const cont = document.getElementById("contenedorModulos");
+        cont.innerHTML = "";
 
-      const columnas = {
-        induccion: "VIDEO DE INDUCCION SST",
-        primerosAuxilios: "VIDEO DE PRIMEROS AUXILIOS",
-        ergonomia: "VIDEO DE ERGONOMIA EN EL TRABAJO",
-        epp: "VIDEO DE EPP"
-      };
+        const columnas = {
+          induccion: "VIDEO DE INDUCCION SST",
+          primerosAuxilios: "VIDEO DE PRIMEROS AUXILIOS",
+          ergonomia: "VIDEO DE ERGONOMIA EN EL TRABAJO",
+          epp: "VIDEO DE EPP"
+        };
 
-      modulos.forEach(mod => {
-        const base = headers.indexOf(columnas[mod]);
-        const nota = usuario[base + 1];
-        const inicio = usuario[base + 2];
-        const video = user.links[mod]?.video || "";
-        const form = user.links[mod]?.form || "";
-        cont.insertAdjacentHTML("beforeend", crearModulo(mod, video, form, nota, inicio));
-      });
+        modulos.forEach(mod => {
+          const base = headers1.indexOf(columnas[mod.key]);
+          const nota = usuario[base + 1];
+          const inicio = usuario[base + 2];
+          cont.insertAdjacentHTML("beforeend", crearModulo(mod.nombre, mod.key, links[mod.key].video, links[mod.key].form, nota, inicio));
+        });
+      } catch (e) {
+        alert("Error al cargar módulos: " + e.message);
+        console.error(e);
+      }
     }
 
     async function marcarVisto(modulo, boton) {
@@ -138,15 +154,17 @@
         const res = await fetch(`${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`);
         const data = await res.json();
         if (data.ok) {
-          boton.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ Video visto el ${data.fecha}</p>`;
+          boton.outerHTML = `<p style="color:green; text-align:center; font-weight:bold;">✅ Video visto correctamente</p>`;
         } else {
           alert(data.mensaje);
           boton.disabled = false;
           boton.textContent = "Marcar video como visto";
         }
       } catch (e) {
-        console.error("Error al marcar visto:", e);
+        console.error(e);
         alert("No se pudo registrar el visto");
+        boton.disabled = false;
+        boton.textContent = "Marcar video como visto";
       }
     }
 
@@ -159,6 +177,7 @@
   </script>
 </body>
 </html>
+
 
 
     cargarModulos();
