@@ -127,7 +127,7 @@
         const formSrc  = transformarForm(filaLinks[i * 2 + 1]);
 
         let estadoHTML = "";
-        if (nota && parseFloat(nota) >= 13 && !vencido) {
+        if (nota && parseFloat(nota) >= 12 && !vencido) {
           estadoHTML = `<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${vencimiento}.</p>`;
         } else if (vencido && fechaInicio) {
           estadoHTML = `<p class="vencido">⚠️ Vencido el ${vencimiento}. Debe volver a rendir la evaluación.</p>`;
