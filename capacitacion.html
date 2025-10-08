@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capacitación</title>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; }
@@ -24,12 +24,14 @@
     <h2>Plataforma de Capacitación</h2>
     <button onclick="logout()">Cerrar sesión</button>
   </header>
+
   <main id="contenedorModulos"></main>
 
   <script>
-    // 🔗 Reemplaza con TU URL publicada de Google Apps Script
+    // ⚙️ URL de tu Apps Script (asegúrate que esté desplegado como “Cualquiera con el enlace”)
     const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
 
+    // URLs de las hojas publicadas
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
@@ -43,7 +45,8 @@
       { key: "epp", nombre: "Video de EPP" }
     ];
 
-    const transformarVideo = link => link?.replace("/view", "/preview") || "";
+    // Funciones auxiliares
+    const transformarVideo = link => link ? link.replace("/view", "/preview") : "";
     const transformarForm = link => link ? (link.includes("?") ? link + "&embedded=true" : link + "?embedded=true") : "";
 
     async function obtenerCSV(url) {
@@ -62,10 +65,22 @@
       const usuario = data1.find(r => r[headers1.indexOf("DNI/CE")].trim() === user.dni);
 
       const links = {
-        induccion: { video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")], form: data2[0][headers2.indexOf("LINK EVALUACION")] },
-        primerosAuxilios: { video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))) },
-        ergonomia: { video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))) },
-        epp: { video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))) }
+        induccion: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")],
+          form: data2[0][headers2.indexOf("LINK EVALUACION")]
+        },
+        primerosAuxilios: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")],
+          form: data2[0][headers2.lastIndexOf("LINK EVALUACION")]
+        },
+        ergonomia: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")],
+          form: data2[0][headers2.lastIndexOf("LINK EVALUACION")]
+        },
+        epp: {
+          video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")],
+          form: data2[0][headers2.lastIndexOf("LINK EVALUACION")]
+        }
       };
 
       return { headers1, usuario, links };
@@ -96,7 +111,7 @@
     async function cargarModulos() {
       try {
         const { headers1, usuario, links } = await obtenerDatos();
-        if (!usuario) throw new Error("Usuario no encontrado");
+        if (!usuario) throw new Error("Usuario no encontrado en la hoja");
 
         const cont = document.getElementById("contenedorModulos");
         cont.innerHTML = "";
