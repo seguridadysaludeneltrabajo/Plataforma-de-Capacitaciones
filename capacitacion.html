@@ -32,14 +32,13 @@
     // === CONFIGURACIÓN ===
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
-
     const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "12345678" };
 
     const modulos = [
-      { key: "induccion", nombre: "Video de Inducción SST" },
-      { key: "primerosAuxilios", nombre: "Video de Primeros Auxilios" },
-      { key: "ergonomia", nombre: "Video de Ergonomía en el Trabajo" },
-      { key: "epp", nombre: "Video de EPP" }
+      { key: "induccion", nombre: "Inducción SST" },
+      { key: "primerosAuxilios", nombre: "Primeros Auxilios" },
+      { key: "ergonomia", nombre: "Ergonomía en el Trabajo" },
+      { key: "epp", nombre: "EPP" }
     ];
 
     // === FUNCIONES BASE ===
@@ -60,16 +59,16 @@
 
     function calcularVencimiento(fechaInicio) {
       if (!fechaInicio) return "";
-      const partes = fechaInicio.split("/");
-      const fecha = new Date(partes[2], partes[1] - 1, partes[0]);
+      const [d, m, y] = fechaInicio.split("/");
+      const fecha = new Date(`${y}-${m}-${d}`);
       fecha.setFullYear(fecha.getFullYear() + 1);
       return fecha.toLocaleDateString("es-PE");
     }
 
     function estaVencido(fechaInicio) {
       if (!fechaInicio) return true;
-      const partes = fechaInicio.split("/");
-      const fecha = new Date(partes[2], partes[1] - 1, partes[0]);
+      const [d, m, y] = fechaInicio.split("/");
+      const fecha = new Date(`${y}-${m}-${d}`);
       const hoy = new Date();
       fecha.setFullYear(fecha.getFullYear() + 1);
       return hoy > fecha;
@@ -78,10 +77,9 @@
     async function cargarModulos() {
       const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers = hoja1[0];
+      const headers1 = hoja1[0];
       const filaUsuario = hoja1.find(r => r[0] === user.dni);
-      const linksHeader = hoja2[0];
-      const linksData = hoja2[1];
+      const filaLinks = hoja2[1]; // fila con todos los links
 
       const cont = document.getElementById("contenedorModulos");
       cont.innerHTML = "";
@@ -91,20 +89,42 @@
         return;
       }
 
-      modulos.forEach(mod => {
-        // obtener columnas según módulo
-        const videoCol = headers.indexOf(`VIDEO DE ${mod.nombre.toUpperCase()}`);
-        const notaCol = headers.indexOf("NOTA", videoCol + 1);
-        const fechaCol = headers.indexOf("FECHA DE INICIO", notaCol + 1);
+      // 🧩 Mapeo de columnas exactas
+      const columnasHoja1 = {
+        induccion: {
+          video: headers1.indexOf("VIDEO DE INDUCCION SST"),
+          nota: headers1.indexOf("VIDEO DE INDUCCION SST") + 1,
+          fecha: headers1.indexOf("VIDEO DE INDUCCION SST") + 2
+        },
+        primerosAuxilios: {
+          video: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS"),
+          nota: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS") + 1,
+          fecha: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS") + 2
+        },
+        ergonomia: {
+          video: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO"),
+          nota: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO") + 1,
+          fecha: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO") + 2
+        },
+        epp: {
+          video: headers1.indexOf("VIDEO DE EPP"),
+          nota: headers1.indexOf("VIDEO DE EPP") + 1,
+          fecha: headers1.indexOf("VIDEO DE EPP") + 2
+        }
+      };
 
-        const nota = filaUsuario[notaCol] || "";
-        const fechaInicio = filaUsuario[fechaCol] || "";
+      for (let i = 0; i < modulos.length; i++) {
+        const m = modulos[i];
+        const cols = columnasHoja1[m.key];
+
+        const nota = filaUsuario[cols.nota] || "";
+        const fechaInicio = filaUsuario[cols.fecha] || "";
         const vencimiento = calcularVencimiento(fechaInicio);
         const vencido = estaVencido(fechaInicio);
 
-        // obtener links de hoja 2
-        const videoSrc = transformarVideo(linksData[linksHeader.indexOf(`LINK ${mod.nombre.toUpperCase()}`)]);
-        const formSrc = transformarForm(linksData[linksHeader.indexOf(`LINK EVALUACION ${mod.nombre.toUpperCase()}`)]);
+        // video y formulario desde hoja 2
+        const videoSrc = transformarVideo(filaLinks[i * 2]);
+        const formSrc  = transformarForm(filaLinks[i * 2 + 1]);
 
         let estadoHTML = "";
         if (nota && parseFloat(nota) >= 13 && !vencido) {
@@ -119,7 +139,7 @@
 
         const html = `
           <div class="modulo">
-            <h3>${mod.nombre}</h3>
+            <h3>Video de ${m.nombre}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
             <div class="info">
               ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
@@ -130,7 +150,7 @@
           </div>
         `;
         cont.insertAdjacentHTML("beforeend", html);
-      });
+      }
     }
 
     function logout() {
