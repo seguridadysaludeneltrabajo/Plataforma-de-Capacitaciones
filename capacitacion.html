@@ -1,179 +1,133 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Capacitación</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capacitaciones SST</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; }
-    header { background: #0056b3; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-    main { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-    .modulo { background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); overflow: hidden; }
-    .modulo h3 { background: #e9ecef; margin: 0; padding: 10px; }
-    iframe { width: 100%; border: none; }
-    .videoFrame { height: 240px; }
-    .formFrame { height: 380px; }
-    .info { padding: 10px; font-size: 14px; border-top: 1px solid #eee; background: #fafafa; }
-    .alerta { background: #ffebeb; color: #b30000; padding: 8px; text-align: center; font-weight: bold; }
-    .btnConfirmar {
-      display: block; width: 80%; margin: 10px auto; padding: 10px;
-      background: #0078d4; color: white; font-weight: bold; border: none; border-radius: 6px;
-      cursor: pointer; transition: background 0.3s;
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
     }
-    .btnConfirmar:hover { background: #005fa3; }
+    .contenedor {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #004a99;
+    }
+    iframe {
+      width: 100%;
+      height: 400px;
+      border-radius: 10px;
+      border: none;
+      margin-top: 10px;
+    }
+    .btn {
+      background: #007bff;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: 0.3s;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+    .mensaje {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    select, input {
+      padding: 8px;
+      margin: 4px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h2>Plataforma de Capacitación</h2>
-    <button onclick="logout()">Cerrar sesión</button>
-  </header>
+  <div class="contenedor">
+    <h1>Capacitaciones SST</h1>
 
-  <main id="contenedorModulos"></main>
+    <label>DNI:</label>
+    <input type="text" id="dni" placeholder="Ingrese su DNI" />
+    <br>
+
+    <label>Módulo:</label>
+    <select id="modulo">
+      <option value="">Seleccione...</option>
+      <option value="induccion">Video de Inducción SST</option>
+      <option value="primerosAuxilios">Primeros Auxilios</option>
+      <option value="ergonomia">Ergonomía en el Trabajo</option>
+      <option value="epp">Uso de EPP</option>
+    </select>
+    <br>
+
+    <button class="btn" onclick="mostrarVideo()">Mostrar Video</button>
+
+    <div id="videoContainer"></div>
+    <div id="mensaje" class="mensaje"></div>
+  </div>
 
   <script>
-    // 🔹 CONFIGURACIÓN
-    const API_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
-    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
-    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
-    
-    const user = JSON.parse(sessionStorage.getItem("user"));
-    if (!user) window.location.href = "index.html";
-
-    const modulos = [
-      { key: "induccion", nombre: "Video de Inducción SST" },
-      { key: "primerosAuxilios", nombre: "Video de Primeros Auxilios" },
-      { key: "ergonomia", nombre: "Video de Ergonomía en el Trabajo" },
-      { key: "epp", nombre: "Video de EPP" }
-    ];
-
-    const transformarVideo = link => link?.replace("/view", "/preview") || "";
-    const transformarForm = link => link ? (link.includes("?") ? link + "&embedded=true" : link + "?embedded=true") : "";
-
-    const sumarUnAnio = fecha => {
-      if (!fecha) return "";
-      const [d,m,a] = fecha.split(/[\/ ]/);
-      const f = new Date(`${a}-${m}-${d}`);
-      f.setFullYear(f.getFullYear() + 1);
-      return f.toLocaleDateString("es-PE");
+    const VIDEOS = {
+      induccion: "https://www.youtube.com/embed/VIDEO_ID1",
+      primerosAuxilios: "https://www.youtube.com/embed/VIDEO_ID2",
+      ergonomia: "https://www.youtube.com/embed/VIDEO_ID3",
+      epp: "https://www.youtube.com/embed/VIDEO_ID4"
     };
 
-    const vencido = fecha => {
-      if (!fecha) return true;
-      const [d,m,a] = fecha.split(/[\/ ]/);
-      const f = new Date(`${a}-${m}-${d}`);
-      const ahora = new Date();
-      f.setFullYear(f.getFullYear() + 1);
-      return ahora > f;
-    };
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysoulPDCJvo2kTkpTPHKf0-8m6EbO4MM52MlE3T1nGzwum3XFtiNKeDzcV4bqRwovqCQ/exec";
 
-    async function obtenerCSV(url) {
-      const res = await fetch(url);
-      const text = await res.text();
-      return text.trim().split("\n").map(r => r.split(","));
-    }
+    function mostrarVideo() {
+      const dni = document.getElementById("dni").value.trim();
+      const modulo = document.getElementById("modulo").value;
+      const contenedor = document.getElementById("videoContainer");
+      const msg = document.getElementById("mensaje");
+      msg.innerHTML = "";
 
-    async function obtenerDatos() {
-      const [hoja1, hoja2] = await Promise.all([obtenerCSV(URL_HOJA1), obtenerCSV(URL_HOJA2)]);
-      const headers1 = hoja1[0];
-      const headers2 = hoja2[0];
-      const data1 = hoja1.slice(1);
-      const data2 = hoja2.slice(1);
-      const usuario = data1.find(r => r[headers1.indexOf("DNI/CE")].trim() === user.dni);
-
-      const links = {
-        induccion: { video: data2[0][headers2.indexOf("LINK VIDEO DE INDUCCION SST")], form: data2[0][headers2.indexOf("LINK EVALUACION")] },
-        primerosAuxilios: { video: data2[0][headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE PRIMEROS AUXILIOS"))) },
-        ergonomia: { video: data2[0][headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE ERGONOMIA EN EL TRABAJO"))) },
-        epp: { video: data2[0][headers2.indexOf("LINK VIDEO DE EPP")], form: data2[0][headers2.indexOf("LINK EVALUACION", headers2.indexOf("LINK VIDEO DE EPP"))) }
-      };
-      return { headers1, usuario, links };
-    }
-
-    function crearModulo(nombre, key, video, form, nota, inicio) {
-      const videoSrc = transformarVideo(video);
-      const formSrc = transformarForm(form);
-      const notaNum = parseFloat(nota) || 0;
-      const esVencido = vencido(inicio);
-      const aprobado = notaNum >= 14;
-
-      let html = `<div class="modulo"><h3>${nombre}</h3>`;
-      html += `<iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>`;
-
-      // Botón de confirmación
-      if (!inicio || esVencido) {
-        html += `<button class="btnConfirmar" onclick="enviarConfirmacion('${key}')">✅ Enviar confirmación de video</button>`;
-      } else {
-        html += `<p style="color:green; text-align:center; font-weight:bold;">✅ Video confirmado el ${inicio}</p>`;
+      if (!dni || !modulo) {
+        msg.innerHTML = "⚠️ Ingrese su DNI y seleccione un módulo.";
+        return;
       }
 
-      if (!inicio || esVencido || !aprobado) {
-        html += `<iframe class="formFrame" src="${formSrc}"></iframe>`;
-      } else {
-        html += `<p style="color:blue; text-align:center;">Capacitación vigente hasta ${sumarUnAnio(inicio)}</p>`;
-      }
-
-      html += `
-        <div class="info">
-          Estado: ${inicio ? (esVencido ? "Vencido" : "Vigente") : "Pendiente"}<br>
-          Nota: ${nota || "—"}<br>
-          Fecha de inicio: ${inicio || "—"}<br>
-          Fecha de vencimiento: ${(inicio && !esVencido) ? sumarUnAnio(inicio) : "—"}
-        </div>
-      </div>`;
-      return html;
+      contenedor.innerHTML = `
+        <iframe src="${VIDEOS[modulo]}" allowfullscreen></iframe>
+        <button class="btn" onclick="registrarVisto('${dni}', '${modulo}')">
+          Confirmar que vi el video
+        </button>
+      `;
     }
 
-    async function enviarConfirmacion(modulo) {
-      const confirmacion = confirm("¿Confirmas que has visualizado este video?");
-      if (!confirmacion) return;
+    async function registrarVisto(dni, modulo) {
+      const msg = document.getElementById("mensaje");
+      msg.innerHTML = "⏳ Enviando confirmación...";
 
       try {
-        const res = await fetch(`${API_URL}?action=registrar&dni=${user.dni}&modulo=${modulo}`);
+        const url = `${SCRIPT_URL}?action=registrar&dni=${dni}&modulo=${modulo}`;
+        const res = await fetch(url);
         const data = await res.json();
-        if (data.status === "OK") {
-          alert("✅ Confirmación enviada correctamente");
-          cargarModulos();
+
+        if (data.ok) {
+          msg.innerHTML = `✅ Confirmado: ${data.mensaje}`;
         } else {
-          alert("⚠️ No se pudo registrar la confirmación");
+          msg.innerHTML = `⚠️ ${data.mensaje}`;
         }
-      } catch (e) {
-        alert("Error al registrar: " + e.message);
+      } catch (err) {
+        msg.innerHTML = `❌ Error de conexión: ${err.message}`;
       }
     }
-
-    async function cargarModulos() {
-      try {
-        const { headers1, usuario, links } = await obtenerDatos();
-        if (!usuario) throw new Error("Usuario no encontrado en la hoja");
-        const cont = document.getElementById("contenedorModulos");
-        cont.innerHTML = "";
-
-        const columnas = {
-          induccion: "VIDEO DE INDUCCION SST",
-          primerosAuxilios: "VIDEO DE PRIMEROS AUXILIOS",
-          ergonomia: "VIDEO DE ERGONOMIA EN EL TRABAJO",
-          epp: "VIDEO DE EPP"
-        };
-
-        modulos.forEach(mod => {
-          const base = headers1.indexOf(columnas[mod.key]);
-          const nota = usuario[base + 1];
-          const inicio = usuario[base + 2];
-          cont.insertAdjacentHTML("beforeend", crearModulo(mod.nombre, mod.key, links[mod.key].video, links[mod.key].form, nota, inicio));
-        });
-      } catch (e) {
-        alert("Error al cargar módulos: " + e.message);
-        console.error(e);
-      }
-    }
-
-    function logout() {
-      sessionStorage.clear();
-      window.location.href = "index.html";
-    }
-
-    cargarModulos();
   </script>
 </body>
 </html>
