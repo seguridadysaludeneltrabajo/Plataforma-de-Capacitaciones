@@ -121,6 +121,7 @@
   <main id="contenedorModulos"></main>
 
   <script>
+    // URLs de las hojas
     const URL_HOJA1 =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 =
@@ -128,31 +129,54 @@
 
     const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
+    // --- FUNCIONES AUXILIARES ---
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
-      return texto.trim().split("\n").map((r) => r.split(","));
+      return texto
+        .trim()
+        .split("\n")
+        .map((r) => r.split(",").map((x) => x.trim()));
     }
 
+    // Convierte enlaces de Google Drive a vista directa
+    function driveToPreview(url) {
+      if (typeof url !== "string") return url || "";
+      const m = url.match(/(?:\/d\/|id=)([-\w]{20,})/);
+      if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+      return url;
+    }
+
+    // Cargar logo y nombre del usuario
     async function cargarLogoYNombre() {
-      const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers = hoja2[0];
-      const fila = hoja2[1];
-      const idxLogo = headers.indexOf("LINK LOGO");
-      if (idxLogo >= 0) {
-        const logoUrl = fila[idxLogo].trim();
-        if (logoUrl) document.getElementById("logo").src = logoUrl;
-      }
+      try {
+        const hoja2 = await obtenerCSV(URL_HOJA2);
+        const headers = hoja2[0].map((h) => (h || "").trim().toUpperCase());
+        const fila = hoja2[1];
 
-      const nombre = user.nombre || "Usuario";
-      document.getElementById("bienvenida").textContent = `Bienvenido(a): ${nombre}`;
+        const idxLogo = headers.indexOf("LINK LOGO");
+        let logoUrl = "";
+        if (idxLogo !== -1) logoUrl = fila[idxLogo] || "";
+        else logoUrl = fila[fila.length - 2] || fila[fila.length - 1] || "";
+
+        logoUrl = (logoUrl || "").trim();
+        if (logoUrl) {
+          const logoImg = document.getElementById("logo");
+          logoImg.src = driveToPreview(logoUrl) || logoUrl;
+        }
+
+        const nombre = user.nombre || "Usuario";
+        document.getElementById("bienvenida").textContent = `Bienvenido(a): ${nombre}`;
+      } catch (e) {
+        console.warn("No se pudo cargar logo y nombre:", e);
+      }
     }
 
+    // Transformar enlaces
     function transformarVideo(link) {
       if (typeof link !== "string" || !link) return "";
       return link.includes("/view") ? link.replace("/view", "/preview") : link;
     }
-
     function transformarForm(link) {
       if (typeof link !== "string" || !link) return "";
       if (link.includes("viewform")) {
@@ -161,6 +185,7 @@
       return link;
     }
 
+    // Fechas y estado
     function calcularVencimiento(fechaInicio) {
       if (!fechaInicio) return "";
       const [d, m, y] = fechaInicio.split("/");
@@ -178,6 +203,7 @@
       return hoy > fecha;
     }
 
+    // Cargar módulos de capacitación
     async function cargarModulos() {
       const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
@@ -194,8 +220,8 @@
         return;
       }
 
-      // Buscar todas las columnas que contienen "VIDEO"
-      const columnasVideo = headers1.filter(h => h.includes("VIDEO"));
+      // Buscar columnas de VIDEO
+      const columnasVideo = headers1.filter((h) => h.includes("VIDEO"));
 
       columnasVideo.forEach((col, i) => {
         const idxVideo = headers1.indexOf(col);
@@ -206,7 +232,7 @@
 
         const videoSrc = transformarVideo(filaLinks[i * 2]);
         const formSrc = transformarForm(filaLinks[i * 2 + 1]);
-        const tema = col.replace("VIDEO DE ", "").trim();
+        const tema = filaLinks[filaLinks.length > 10 ? 10 + i : i * 2]; // por si hay TEMAS en hoja
 
         let estadoHTML = "";
         if (nota >= 12 && !vencido)
@@ -221,7 +247,7 @@
           "beforeend",
           `
           <div class="modulo">
-            <h3>${tema}</h3>
+            <h3>${tema || col.replace("VIDEO DE ", "").trim()}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
             <div class="info">
               ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
@@ -240,8 +266,10 @@
       window.location.href = "index.html";
     }
 
+    // Ejecutar carga
     cargarLogoYNombre();
     cargarModulos();
   </script>
 </body>
 </html>
+
