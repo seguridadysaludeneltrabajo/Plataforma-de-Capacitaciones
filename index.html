@@ -14,9 +14,11 @@
       background: linear-gradient(135deg, #0078d4, #00b4d8);
       color: #333;
       margin: 0;
+      background-size: cover;
+      background-repeat: repeat;
     }
     .login-box {
-      background: white;
+      background: rgba(255,255,255,0.9);
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -107,6 +109,20 @@
         const links = await fetchCSV(URL_HOJA2);
         const fila = links[0]; // En tu hoja 2, todos los links están en la primera fila
 
+        // Obtener logo
+        const logoURL = fila["LINK LOGO"] || "";
+        if (logoURL) {
+          document.body.style.backgroundImage = `
+            repeating-linear-gradient(0deg, transparent 0 100px),
+            repeating-linear-gradient(90deg, transparent 0 100px),
+            url(${logoURL})
+          `;
+          document.body.style.backgroundSize = "200px 200px, 200px 200px, 100px 100px";
+          document.body.style.backgroundBlendMode = "overlay";
+          document.body.style.backgroundRepeat = "repeat";
+          document.body.style.backgroundPosition = "center";
+        }
+
         // Asignar estructura de links a cada módulo
         user.links = {
           induccion: {
@@ -115,19 +131,18 @@
           },
           primerosAuxilios: {
             video: fila["LINK VIDEO DE PRIMEROS AUXILIOS"],
-            form: fila["LINK EVALUACION_1"] || fila["LINK EVALUACION 1"] || fila["LINK EVALUACION"]
+            form: fila["LINK EVALUACION"] || fila["LINK EVALUACION_1"] || fila["LINK EVALUACION 1"]
           },
           ergonomia: {
             video: fila["LINK VIDEO DE ERGONOMIA EN EL TRABAJO"],
-            form: fila["LINK EVALUACION_2"] || fila["LINK EVALUACION 2"] || fila["LINK EVALUACION"]
+            form: fila["LINK EVALUACION"] || fila["LINK EVALUACION_2"] || fila["LINK EVALUACION 2"]
           },
           epp: {
             video: fila["LINK VIDEO DE EPP"],
-            form: fila["LINK EVALUACION_3"] || fila["LINK EVALUACION 3"] || fila["LINK EVALUACION"]
+            form: fila["LINK EVALUACION"] || fila["LINK EVALUACION_3"] || fila["LINK EVALUACION 3"]
           }
         };
 
-        // Guardar datos en sessionStorage
         sessionStorage.setItem("user", JSON.stringify({
           dni: dni,
           nombre: user["NOMBRE"] || "",
@@ -135,7 +150,6 @@
           links: user.links
         }));
 
-        // Redirigir al dashboard
         window.location.href = "capacitacion.html";
 
       } catch (err) {
