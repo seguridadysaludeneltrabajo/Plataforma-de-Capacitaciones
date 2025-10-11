@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Capacitación de Seguridad y Salud en el Trabajo</title>
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f5f7fa;
     }
     header {
       background: #0078d7;
@@ -27,10 +27,13 @@
     .header-left img {
       height: 40px;
       border-radius: 6px;
+      background: white;
+      padding: 3px;
     }
     .header-left h2 {
       margin: 0;
       font-size: 18px;
+      font-weight: 500;
     }
     button {
       background-color: #ff4d4d;
@@ -49,12 +52,13 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
       gap: 20px;
+      box-sizing: border-box;
     }
 
     .modulo {
       background: white;
       border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -62,25 +66,28 @@
 
     .modulo h3 {
       margin: 0;
-      padding: 10px;
-      background: #e9ecef;
+      padding: 12px;
+      background: #e9f1fb;
+      color: #004a99;
+      font-size: 16px;
+      font-weight: 600;
     }
 
     iframe.videoFrame {
-      border: none;
       width: 100%;
-      aspect-ratio: 16/9;
+      aspect-ratio: 16 / 9;
+      border: none;
     }
 
     iframe.formFrame {
-      border: none;
       width: 100%;
       height: 420px;
+      border: none;
       display: none;
     }
 
     .info {
-      padding: 10px;
+      padding: 10px 15px;
       font-size: 14px;
       background: #fafafa;
       border-top: 1px solid #eee;
@@ -105,7 +112,7 @@
 <body>
   <header>
     <div class="header-left">
-      <img id="logo" alt="Logo">
+      <img id="logo" alt="Logo" />
       <h2 id="bienvenida">Bienvenido(a):</h2>
     </div>
     <button onclick="logout()">Cerrar sesión</button>
@@ -114,33 +121,40 @@
   <main id="contenedorModulos"></main>
 
   <script>
-    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
-    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+    const URL_HOJA1 =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
+    const URL_HOJA2 =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+
     const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
-      return texto.trim().split("\n").map(r => r.split(","));
+      return texto.trim().split("\n").map((r) => r.split(","));
     }
 
     async function cargarLogoYNombre() {
       const hoja2 = await obtenerCSV(URL_HOJA2);
-      const ultimaColLogo = hoja2[0].length - 2;
-      const logoUrl = hoja2[1][ultimaColLogo].trim();
-      if (logoUrl) document.getElementById("logo").src = logoUrl;
+      const headers = hoja2[0];
+      const fila = hoja2[1];
+      const idxLogo = headers.indexOf("LINK LOGO");
+      if (idxLogo >= 0) {
+        const logoUrl = fila[idxLogo].trim();
+        if (logoUrl) document.getElementById("logo").src = logoUrl;
+      }
 
       const nombre = user.nombre || "Usuario";
       document.getElementById("bienvenida").textContent = `Bienvenido(a): ${nombre}`;
     }
 
     function transformarVideo(link) {
-      if (!link) return "";
+      if (typeof link !== "string" || !link) return "";
       return link.includes("/view") ? link.replace("/view", "/preview") : link;
     }
 
     function transformarForm(link) {
-      if (!link) return "";
+      if (typeof link !== "string" || !link) return "";
       if (link.includes("viewform")) {
         return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
       }
@@ -168,9 +182,10 @@
       const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const headers1 = hoja1[0];
-      const filaUsuario = hoja1.find(r => r[1] === user.dni);
+      const filaUsuario = hoja1.find((r) => r[1] === user.dni);
       const filaLinks = hoja2[1];
-      const temas = hoja2[1][hoja2[1].length - 1].split(";");
+      const temasIdx = hoja2[0].indexOf("TEMAS");
+      const temas = filaLinks[temasIdx]?.split(";") || [];
 
       const cont = document.getElementById("contenedorModulos");
       cont.innerHTML = "";
@@ -184,7 +199,7 @@
         "VIDEO DE INDUCCION SST",
         "VIDEO DE PRIMEROS AUXILIOS",
         "VIDEO DE ERGONOMIA EN EL TRABAJO",
-        "VIDEO DE EPP"
+        "VIDEO DE EPP",
       ];
 
       columnas.forEach((col, i) => {
@@ -203,12 +218,13 @@
           estadoHTML = `<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${vencimiento}.</p>`;
         else if (vencido && fechaInicio)
           estadoHTML = `<p class="vencido">⚠️ Vencido el ${vencimiento}. Debe volver a rendir la evaluación.</p>`;
-        else
-          estadoHTML = `<p>🕓 Pendiente de evaluación.</p>`;
+        else estadoHTML = `<p>🕓 Pendiente de evaluación.</p>`;
 
         const mostrarForm = nota < 12 || vencido;
 
-        cont.insertAdjacentHTML("beforeend", `
+        cont.insertAdjacentHTML(
+          "beforeend",
+          `
           <div class="modulo">
             <h3>${tema}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
@@ -219,7 +235,8 @@
             </div>
             ${mostrarForm ? `<iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>` : ""}
           </div>
-        `);
+        `
+        );
       });
     }
 
