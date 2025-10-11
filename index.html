@@ -3,190 +3,158 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plataforma de Capacitación SST</title>
+  <title>Ingreso - Capacitación SST</title>
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-    }
-
-    header {
-      background: #0078d7;
-      color: white;
-      padding: 10px 20px;
+      height: 100vh;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    header img {
-      height: 45px;
-      border-radius: 8px;
-      object-fit: contain;
-    }
-
-    header h2 {
-      margin: 0;
-      font-size: 20px;
-    }
-
-    main {
-      padding: 20px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-      gap: 20px;
       justify-content: center;
-      box-sizing: border-box;
-    }
-
-    .modulo {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      align-items: center;
+      font-family: Arial, sans-serif;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.2s;
+      position: relative;
+      background-color: #f4f6f9;
     }
 
-    .modulo:hover {
-      transform: scale(1.01);
+    /* Patrón tipo ajedrez */
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px),
+        linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
+      background-size: 120px 120px;
+      z-index: 0;
     }
 
-    .modulo h3 {
-      margin: 0;
-      padding: 12px;
-      background: #e9ecef;
+    /* Logo como marca de agua en mosaico */
+    body::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-size: 120px 120px;
+      background-repeat: repeat;
+      background-position: 60px 60px;
+      opacity: 0.07;
+      z-index: 0;
+    }
+
+    .login-box {
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
       text-align: center;
-      font-size: 16px;
+      width: 320px;
+      backdrop-filter: blur(4px);
     }
 
-    .videoFrame {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      border: none;
+    .login-box h2 {
+      margin-bottom: 20px;
+      color: #0078d4;
     }
 
-    .formFrame {
-      width: 100%;
-      border: none;
-      height: 450px;
-      background: #fafafa;
-    }
-
-    .info {
+    input {
+      width: 90%;
       padding: 10px;
-      font-size: 14px;
-      background: #fafafa;
-      border-top: 1px solid #eee;
+      margin: 8px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 15px;
     }
 
     button {
-      background: #ff4d4d;
+      width: 95%;
+      padding: 10px;
+      background-color: #0078d4;
       color: white;
       border: none;
-      border-radius: 4px;
-      padding: 8px 15px;
+      border-radius: 5px;
+      font-size: 16px;
       cursor: pointer;
-      font-size: 14px;
-      transition: background 0.3s;
+      transition: 0.3s;
     }
 
     button:hover {
-      background: #cc0000;
+      background-color: #005a9e;
     }
 
-    #nombreUsuario {
-      margin-right: 10px;
-      font-weight: bold;
-    }
-
-    /* 🧩 Ajuste para pantallas grandes y pequeñas */
-    @media (min-width: 900px) {
-      main {
-        grid-template-columns: repeat(2, 1fr); /* 2 columnas en PC */
-      }
-    }
-
-    @media (max-width: 899px) {
-      main {
-        grid-template-columns: 1fr; /* 1 columna en móviles */
-      }
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <img id="logoEmpresa" src="" alt="Logo Empresa">
-      <h2>Plataforma de Capacitación SST</h2>
-    </div>
-    <div style="display: flex; align-items: center;">
-      <span id="nombreUsuario"></span>
-      <button onclick="logout()">Cerrar sesión</button>
-    </div>
-  </header>
-
-  <main id="contenedorModulos"></main>
+  <div class="login-box">
+    <h2>Acceso a Capacitación SST</h2>
+    <input type="text" id="dni" placeholder="DNI">
+    <input type="password" id="password" placeholder="Contraseña">
+    <button onclick="login()">Ingresar</button>
+    <div id="error" class="error"></div>
+  </div>
 
   <script>
-    const user = JSON.parse(sessionStorage.getItem("user"));
-    if (!user) window.location.href = "index.html";
-
-    document.getElementById("nombreUsuario").textContent = user.nombre;
-    document.getElementById("logoEmpresa").src = user.logo || "";
-
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-    async function obtenerCSV(url) {
-      const resp = await fetch(url);
+    let logoUrl = "";
+
+    async function cargarLogo() {
+      const resp = await fetch(URL_HOJA2);
+      const data = await resp.text();
+      const filas = data.trim().split("\n").map(r => r.split(","));
+      const ultimaColumna = filas[0].length - 1;
+      const logoLink = filas[1][ultimaColumna].trim();
+      logoUrl = logoLink;
+      document.body.style.setProperty("--logo-url", `url('${logoUrl}')`);
+      document.body.style.backgroundImage = `url('${logoUrl}')`;
+      document.body.style.setProperty("background-size", "120px 120px");
+    }
+
+    async function obtenerUsuarios() {
+      const resp = await fetch(URL_HOJA1);
       const texto = await resp.text();
       return texto.trim().split("\n").map(r => r.split(","));
     }
 
-    async function cargarModulos() {
-      const hoja1 = await obtenerCSV(URL_HOJA1);
-      const hoja2 = await obtenerCSV(URL_HOJA2);
-      const filaUsuario = hoja1.find(r => r[1] === user.dni);
-      const filaLinks = hoja2[1];
+    async function login() {
+      const dni = document.getElementById("dni").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      const error = document.getElementById("error");
 
-      if (!filaUsuario) return;
-
-      const cont = document.getElementById("contenedorModulos");
-      cont.innerHTML = "";
-
-      const modulos = [
-        { key: "induccion", nombre: "Inducción SST" },
-        { key: "primerosAuxilios", nombre: "Primeros Auxilios" },
-        { key: "ergonomia", nombre: "Ergonomía en el Trabajo" },
-        { key: "epp", nombre: "EPP" }
-      ];
-
-      // Mostrar 2 módulos por fila en PC, 1 en móvil
-      for (let i = 0; i < modulos.length; i++) {
-        const m = modulos[i];
-        const videoSrc = filaLinks[i * 2];
-        const formSrc = filaLinks[i * 2 + 1];
-
-        cont.insertAdjacentHTML("beforeend", `
-          <div class="modulo">
-            <h3>${m.nombre}</h3>
-            <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-            <iframe class="formFrame" src="${formSrc}"></iframe>
-          </div>
-        `);
+      if (!dni || !pass) {
+        error.textContent = "Por favor, completa todos los campos.";
+        return;
       }
+
+      const data = await obtenerUsuarios();
+      const encabezados = data[0];
+      const idxDNI = encabezados.findIndex(c => c.includes("DNI"));
+      const idxPass = encabezados.findIndex(c => c.includes("CONTRASEÑA"));
+      const idxNombre = encabezados.findIndex(c => c.includes("NOMBRE"));
+
+      const user = data.find(row => row[idxDNI] === dni && row[idxPass] === pass);
+
+      if (!user) {
+        error.textContent = "DNI o contraseña incorrectos.";
+        return;
+      }
+
+      sessionStorage.setItem("user", JSON.stringify({
+        dni,
+        nombre: user[idxNombre]
+      }));
+
+      window.location.href = "capacitacion.html";
     }
 
-    function logout() {
-      sessionStorage.clear();
-      window.location.href = "index.html";
-    }
-
-    cargarModulos();
+    cargarLogo();
   </script>
 </body>
 </html>
