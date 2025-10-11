@@ -3,160 +3,85 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingreso - Plataforma de Capacitación</title>
+  <title>Ingreso Capacitación SST</title>
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background: linear-gradient(135deg, #0078d4, #00b4d8);
-      color: #333;
-      margin: 0;
-      background-size: cover;
-      background-repeat: repeat;
+      flex-direction: column;
+      background-size: 200px 200px;
     }
-    .login-box {
-      background: rgba(255,255,255,0.9);
+
+    .contenedor {
+      background: rgba(255, 255, 255, 0.9);
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      width: 320px;
       text-align: center;
+      width: 320px;
     }
-    h2 {
-      margin-bottom: 20px;
-      color: #0078d4;
-    }
-    input {
-      width: 90%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
+
+    h2 { color: #0078d7; margin-bottom: 20px; }
+    input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; }
     button {
-      width: 100%;
-      padding: 10px;
-      background: #0078d4;
+      background: #0078d7;
       color: white;
+      padding: 10px 20px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 16px;
-      margin-top: 10px;
+      width: 100%;
+      font-weight: bold;
     }
-    button:hover {
-      background: #005fa3;
-    }
-    .error {
-      color: red;
-      font-size: 13px;
-      margin-top: 10px;
-    }
+    button:hover { background: #005ea8; }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <h2>Ingreso a Capacitación</h2>
-    <input type="text" id="dni" placeholder="DNI o CE">
-    <input type="password" id="password" placeholder="Contraseña">
+  <div class="contenedor">
+    <h2>Ingreso a Capacitación SST</h2>
+    <input type="text" id="dni" placeholder="Ingrese su DNI">
     <button onclick="login()">Ingresar</button>
-    <div class="error" id="error"></div>
   </div>
 
   <script>
-    // URLs de tus hojas públicas en formato CSV
-    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-    async function fetchCSV(url) {
-      const res = await fetch(url);
-      const text = await res.text();
-      const rows = text.trim().split("\n").map(r => r.split(","));
-      const headers = rows[0].map(h => h.trim());
-      const data = rows.slice(1).map(r => {
-        let obj = {};
-        headers.forEach((h, i) => obj[h] = r[i] ? r[i].trim() : "");
-        return obj;
-      });
-      return data;
+    async function obtenerCSV(url) {
+      const resp = await fetch(url);
+      const texto = await resp.text();
+      return texto.trim().split("\n").map(r => r.split(","));
+    }
+
+    async function aplicarFondo() {
+      const hoja2 = await obtenerCSV(URL_HOJA2);
+      const headers = hoja2[0];
+      const colLogo = headers.indexOf("LINK LOGO");
+      if (colLogo === -1) return;
+
+      const filaLogo = hoja2[1][colLogo];
+      if (!filaLogo) return;
+
+      document.body.style.backgroundImage = `url('${filaLogo}'), url('${filaLogo}')`;
+      document.body.style.backgroundPosition = "0 0, 100px 100px";
+      document.body.style.backgroundRepeat = "repeat";
     }
 
     async function login() {
       const dni = document.getElementById("dni").value.trim();
-      const pass = document.getElementById("password").value.trim();
-      const errorBox = document.getElementById("error");
-      errorBox.textContent = "";
-
-      if (!dni || !pass) {
-        errorBox.textContent = "Por favor, completa todos los campos.";
+      if (!dni) {
+        alert("Por favor ingrese su DNI.");
         return;
       }
-
-      try {
-        const usuarios = await fetchCSV(URL_HOJA1);
-        const user = usuarios.find(u => u["DNI/CE"] === dni && u["CONTRASEÑA"] === pass);
-
-        if (!user) {
-          errorBox.textContent = "Credenciales incorrectas.";
-          return;
-        }
-
-        // Cargar links desde la Hoja 2
-        const links = await fetchCSV(URL_HOJA2);
-        const fila = links[0]; // En tu hoja 2, todos los links están en la primera fila
-
-        // Obtener logo
-        const logoURL = fila["LINK LOGO"] || "";
-        if (logoURL) {
-          document.body.style.backgroundImage = `
-            repeating-linear-gradient(0deg, transparent 0 100px),
-            repeating-linear-gradient(90deg, transparent 0 100px),
-            url(${logoURL})
-          `;
-          document.body.style.backgroundSize = "200px 200px, 200px 200px, 100px 100px";
-          document.body.style.backgroundBlendMode = "overlay";
-          document.body.style.backgroundRepeat = "repeat";
-          document.body.style.backgroundPosition = "center";
-        }
-
-        // Asignar estructura de links a cada módulo
-        user.links = {
-          induccion: {
-            video: fila["LINK VIDEO DE INDUCCION SST"],
-            form: fila["LINK EVALUACION"]
-          },
-          primerosAuxilios: {
-            video: fila["LINK VIDEO DE PRIMEROS AUXILIOS"],
-            form: fila["LINK EVALUACION"] || fila["LINK EVALUACION_1"] || fila["LINK EVALUACION 1"]
-          },
-          ergonomia: {
-            video: fila["LINK VIDEO DE ERGONOMIA EN EL TRABAJO"],
-            form: fila["LINK EVALUACION"] || fila["LINK EVALUACION_2"] || fila["LINK EVALUACION 2"]
-          },
-          epp: {
-            video: fila["LINK VIDEO DE EPP"],
-            form: fila["LINK EVALUACION"] || fila["LINK EVALUACION_3"] || fila["LINK EVALUACION 3"]
-          }
-        };
-
-        sessionStorage.setItem("user", JSON.stringify({
-          dni: dni,
-          nombre: user["NOMBRE"] || "",
-          modulos: {},
-          links: user.links
-        }));
-
-        window.location.href = "capacitacion.html";
-
-      } catch (err) {
-        console.error("Error de login:", err);
-        errorBox.textContent = "Error al conectar con los datos.";
-      }
+      sessionStorage.setItem("user", JSON.stringify({ dni }));
+      window.location.href = "capacitacion.html";
     }
+
+    aplicarFondo();
   </script>
 </body>
 </html>
