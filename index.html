@@ -3,36 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ingreso Capacitación SST</title>
+  <title>Ingreso - Capacitación SST</title>
   <style>
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      color: #333;
+      height: 100vh;
+      margin: 0;
       background-color: #f4f6f9;
       background-size: 200px 200px;
       background-repeat: repeat;
       background-position: center;
     }
     .login-box {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255,255,255,0.95);
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       width: 320px;
       text-align: center;
     }
-    h2 { color: #0078d4; margin-bottom: 20px; }
+    h2 {
+      margin-bottom: 20px;
+      color: #0078d4;
+    }
     input {
       width: 100%;
       padding: 10px;
       margin: 8px 0;
-      border: 1px solid #ccc;
       border-radius: 6px;
+      border: 1px solid #ccc;
       font-size: 14px;
     }
     button {
@@ -46,8 +48,14 @@
       font-size: 16px;
       margin-top: 10px;
     }
-    button:hover { background: #005fa3; }
-    .error { color: red; font-size: 13px; margin-top: 10px; }
+    button:hover {
+      background: #005fa3;
+    }
+    .error {
+      color: red;
+      font-size: 13px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -68,23 +76,22 @@
       const text = await res.text();
       const rows = text.trim().split("\n").map(r => r.split(","));
       const headers = rows[0].map(h => h.trim());
-      const data = rows.slice(1).map(r => {
-        let obj = {};
-        headers.forEach((h, i) => obj[h] = r[i] ? r[i].trim() : "");
+      return rows.slice(1).map(r => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (r[i] || "").trim());
         return obj;
       });
-      return data;
     }
 
     async function applyLogoBackground() {
       try {
-        const links = await fetchCSV(URL_HOJA2);
-        const logoUrl = links[0]["LINK LOGO"];
-        if (logoUrl) {
-          document.body.style.backgroundImage = `url('${logoUrl}')`;
+        const hoja2 = await fetchCSV(URL_HOJA2);
+        const logo = hoja2[0]["LINK LOGO"];
+        if (logo) {
+          document.body.style.backgroundImage = `url('${logo}')`;
         }
       } catch (err) {
-        console.warn("No se pudo aplicar el logo:", err);
+        console.warn("No se pudo aplicar fondo de logo:", err);
       }
     }
 
@@ -95,39 +102,34 @@
       errorBox.textContent = "";
 
       if (!dni || !pass) {
-        errorBox.textContent = "Por favor completa ambos campos.";
+        errorBox.textContent = "Por favor, completa todos los campos.";
         return;
       }
 
       try {
-        const usuarios = await fetchCSV(URL_HOJA1);
-        const user = usuarios.find(u => u["DNI/CE"] === dni && u["CONTRASEÑA"] === pass);
+        const hoja1 = await fetchCSV(URL_HOJA1);
+        const hoja2 = await fetchCSV(URL_HOJA2);
 
+        const user = hoja1.find(u => u["DNI/CE"] === dni && u["CONTRASEÑA"] === pass);
         if (!user) {
           errorBox.textContent = "DNI o contraseña incorrectos.";
           return;
         }
 
-        const links = await fetchCSV(URL_HOJA2);
-        const fila = links[0];
-        const logo = fila["LINK LOGO"];
+        const links = hoja2[0];
+        const logo = links["LINK LOGO"] || "";
 
         sessionStorage.setItem("user", JSON.stringify({
           nombre: user["NOMBRE COMPLETO"] || "",
-          dni: dni,
-          links: {
-            induccion: { video: fila["LINK VIDEO DE INDUCCION SST"], form: fila["LINK EVALUACION"] },
-            primerosAuxilios: { video: fila["LINK VIDEO DE PRIMEROS AUXILIOS"], form: fila["LINK EVALUACION_1"] || fila["LINK EVALUACION"] },
-            ergonomia: { video: fila["LINK VIDEO DE ERGONOMIA EN EL TRABAJO"], form: fila["LINK EVALUACION_2"] || fila["LINK EVALUACION"] },
-            epp: { video: fila["LINK VIDEO DE EPP"], form: fila["LINK EVALUACION_3"] || fila["LINK EVALUACION"] }
-          },
-          logo: logo
+          dni,
+          links,
+          logo
         }));
 
         window.location.href = "capacitacion.html";
       } catch (err) {
-        errorBox.textContent = "Error al conectar con los datos.";
         console.error(err);
+        errorBox.textContent = "Error al conectar con los datos.";
       }
     }
 
