@@ -3,133 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plataforma de Capacitación SST</title>
+  <title>Capacitación SST</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
     header {
-      background: #0078d7;
-      color: white;
-      padding: 12px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #0078d7; color: white;
+      padding: 12px 20px; display: flex;
+      justify-content: space-between; align-items: center;
       flex-wrap: wrap;
-      gap: 10px;
     }
-    header img {
-      height: 40px;
-      border-radius: 6px;
-    }
-    header h2 {
-      margin: 0;
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    header span {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    button {
-      background: #d32f2f;
-      color: white;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #b71c1c;
+    header img { height: 50px; margin-right: 10px; }
+    header h2 { margin: 0; display: flex; align-items: center; gap: 10px; }
+    header button {
+      background: red; color: white;
+      border: none; border-radius: 6px;
+      padding: 8px 14px; cursor: pointer;
     }
     main {
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 20px;
-      max-width: 900px;
-      margin: 0 auto;
     }
     .modulo {
-      background: white;
-      border-radius: 10px;
+      background: white; border-radius: 10px;
       box-shadow: 0 3px 8px rgba(0,0,0,0.1);
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
     }
-    .modulo h3 {
-      margin: 0;
-      padding: 10px;
-      background: #e9ecef;
-      font-size: 16px;
-    }
-    iframe.videoFrame {
-      border: none;
-      width: 100%;
-      height: 240px;
-    }
-    iframe.formFrame {
-      border: none;
-      width: 100%;
-      height: 420px;
-      display: none;
-    }
-    .info {
-      padding: 10px;
-      font-size: 14px;
-      background: #fafafa;
-      border-top: 1px solid #eee;
-    }
+    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
+    iframe { border: none; width: 100%; }
+    .videoFrame { height: 240px; }
+    .formFrame { height: 420px; display: none; }
+    .info { padding: 10px; font-size: 14px; background: #fafafa; border-top: 1px solid #eee; }
     .aprobado { color: green; font-weight: bold; }
     .vencido { color: red; font-weight: bold; }
-    .notificacion {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #0078d4;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 6px;
-      display: none;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-    }
     @media (max-width: 600px) {
-      header h2 { font-size: 18px; text-align: center; }
-      header img { height: 35px; }
-      button { width: 100%; }
+      .videoFrame { height: 200px; }
+      .formFrame { height: 400px; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h2>
-      <img id="logo" src="" alt="Logo">
-      Plataforma de Capacitación SST
-      <span id="nombreUsuario"></span>
-    </h2>
+    <h2><img id="logo" src="" alt="Logo"><span>Plataforma de Capacitación SST</span></h2>
     <button onclick="logout()">Cerrar sesión</button>
   </header>
 
   <main id="contenedorModulos"></main>
-  <div id="notificacion" class="notificacion"></div>
 
   <script>
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
-
     const user = JSON.parse(sessionStorage.getItem("user"));
-    if (!user) window.location.href = "index.html";
-
-    document.getElementById("nombreUsuario").textContent = ` | Bienvenido(a): ${user.nombre}`;
-    document.getElementById("logo").src = user.logo || "";
 
     async function obtenerCSV(url) {
       const resp = await fetch(url);
@@ -140,10 +65,16 @@
     function transformarVideo(link) {
       return link?.includes("/view") ? link.replace("/view", "/preview") : link;
     }
-
     function transformarForm(link) {
-      if (!link) return "";
-      return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
+      return link ? (link.includes("?") ? link + "&embedded=true" : link + "?embedded=true") : "";
+    }
+
+    async function cargarLogo() {
+      const hoja2 = await obtenerCSV(URL_HOJA2);
+      const headers = hoja2[0];
+      const logoIndex = headers.findIndex(h => h.trim().toUpperCase() === "LINK LOGO");
+      const logoLink = hoja2[1]?.[logoIndex];
+      if (logoLink) document.getElementById("logo").src = logoLink;
     }
 
     function calcularVencimiento(fechaInicio) {
@@ -167,37 +98,24 @@
       const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const headers1 = hoja1[0];
-      const filaUsuario = hoja1.find(r => r[headers1.indexOf("DNI/CE")] === user.dni);
+      const filaUsuario = hoja1.find(r => r.includes(user.dni));
       const filaLinks = hoja2[1];
 
-      const cont = document.getElementById("contenedorModulos");
-      cont.innerHTML = "";
-
-      if (!filaUsuario) {
-        cont.innerHTML = "<p>No se encontró tu registro.</p>";
-        return;
-      }
-
-      const columnas = {
-        induccion: headers1.indexOf("VIDEO DE INDUCCION SST"),
-        primeros: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS"),
-        ergonomia: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO"),
-        epp: headers1.indexOf("VIDEO DE EPP")
-      };
-
       const modulos = [
-        { nombre: "Inducción SST", key: "induccion", idx: 0 },
-        { nombre: "Primeros Auxilios", key: "primeros", idx: 1 },
-        { nombre: "Ergonomía en el Trabajo", key: "ergonomia", idx: 2 },
-        { nombre: "EPP", key: "epp", idx: 3 }
+        { key: "VIDEO DE INDUCCION SST", nombre: "Inducción SST" },
+        { key: "VIDEO DE PRIMEROS AUXILIOS", nombre: "Primeros Auxilios" },
+        { key: "VIDEO DE ERGONOMIA EN EL TRABAJO", nombre: "Ergonomía" },
+        { key: "VIDEO DE EPP", nombre: "EPP" }
       ];
+
+      const cont = document.getElementById("contenedorModulos");
+      cont.innerHTML = `<h3>👤 Bienvenido(a), ${user.nombre}</h3>`;
 
       for (let i = 0; i < modulos.length; i++) {
         const m = modulos[i];
-        const base = columnas[m.key];
-
-        const nota = filaUsuario[base + 1];
-        const fechaInicio = filaUsuario[base + 2];
+        const base = headers1.indexOf(m.key);
+        const nota = filaUsuario[base + 1] || "";
+        const fechaInicio = filaUsuario[base + 2] || "";
         const vencimiento = calcularVencimiento(fechaInicio);
         const vencido = estaVencido(fechaInicio);
 
@@ -205,13 +123,12 @@
         const formSrc = transformarForm(filaLinks[i * 2 + 1]);
 
         let estadoHTML = "";
-        if (nota && parseFloat(nota) >= 12 && !vencido) {
+        if (nota && parseFloat(nota) >= 12 && !vencido)
           estadoHTML = `<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${vencimiento}.</p>`;
-        } else if (vencido && fechaInicio) {
-          estadoHTML = `<p class="vencido">⚠️ Vencido el ${vencimiento}. Debe rendir la evaluación nuevamente.</p>`;
-        } else {
+        else if (vencido && fechaInicio)
+          estadoHTML = `<p class="vencido">⚠️ Vencido el ${vencimiento}. Debe volver a rendir la evaluación.</p>`;
+        else
           estadoHTML = `<p>🕓 Pendiente de evaluación.</p>`;
-        }
 
         const mostrarForm = (!nota || parseFloat(nota) < 12 || vencido);
 
@@ -220,8 +137,8 @@
             <h3>${m.nombre}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
             <div class="info">
-              ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
-              ${vencimiento ? `<p>📆 Fecha de vencimiento: ${vencimiento}</p>` : ""}
+              ${fechaInicio ? `<p>📅 Inicio: ${fechaInicio}</p>` : ""}
+              ${vencimiento ? `<p>📆 Vencimiento: ${vencimiento}</p>` : ""}
               ${estadoHTML}
             </div>
             ${mostrarForm ? `<iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>` : ""}
@@ -235,6 +152,7 @@
       window.location.href = "index.html";
     }
 
+    cargarLogo();
     cargarModulos();
   </script>
 </body>
