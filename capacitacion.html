@@ -3,69 +3,134 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Capacitación SST</title>
+  <title>Plataforma de Capacitación SST</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
-    header {
-      background: #0078d7;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    body { 
+      margin: 0; 
+      font-family: "Segoe UI", Arial, sans-serif; 
+      background: #f5f6fa;
+      color: #333;
     }
-    header img { height: 50px; margin-right: 10px; border-radius: 8px; }
-    header h2 { display: flex; align-items: center; margin: 0; gap: 10px; }
 
-    main { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-    .modulo { background: white; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
-    .modulo h3 { margin: 0; padding: 10px; background: #e9ecef; }
-    iframe { border: none; width: 100%; }
-    .videoFrame { height: 240px; }
-    .formFrame { height: 420px; display: none; }
-    .info { padding: 10px; font-size: 14px; background: #fafafa; border-top: 1px solid #eee; }
-    .aprobado { color: green; font-weight: bold; }
-    .vencido { color: red; font-weight: bold; }
+    header { 
+      background: #0078d7; 
+      color: white; 
+      padding: 10px 20px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
-    button {
+    header .titulo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header img {
+      height: 45px;
+      width: auto;
+      border-radius: 6px;
+      background: white;
+      padding: 4px;
+    }
+
+    header button {
       background: #d32f2f;
       color: white;
       border: none;
-      padding: 10px 18px;
-      border-radius: 6px;
+      padding: 10px 16px;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: bold;
+      font-size: 15px;
+      transition: background 0.3s ease;
     }
-    button:hover { background: #b71c1c; }
 
-    .notificacion {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #0078d4;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 6px;
+    header button:hover {
+      background: #b71c1c;
+    }
+
+    main {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .modulo {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modulo h3 {
+      margin: 0;
+      padding: 12px;
+      background: #e9ecef;
+      font-size: 18px;
+    }
+
+    iframe {
+      border: none;
+      width: 100%;
+    }
+
+    .videoFrame {
+      height: 240px;
+    }
+
+    .formFrame {
+      height: 420px;
       display: none;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    }
+
+    .info {
+      padding: 12px;
+      font-size: 14px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+    }
+
+    .aprobado { color: green; font-weight: bold; }
+    .vencido { color: red; font-weight: bold; }
+
+    @media (max-width: 600px) {
+      .videoFrame { height: 200px; }
+      .formFrame { height: 400px; }
+      header { flex-direction: column; text-align: center; }
+      header img { height: 40px; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h2 id="tituloHeader"><img id="logoHeader" src="" alt="Logo">Plataforma de Capacitación SST</h2>
+    <div class="titulo">
+      <img id="logo" alt="Logo SST">
+      <div>
+        <h2>Plataforma de Capacitación SST</h2>
+        <p id="bienvenida" style="margin:0;font-size:15px;color:#fff;"></p>
+      </div>
+    </div>
     <button onclick="logout()">Cerrar sesión</button>
   </header>
 
   <main id="contenedorModulos"></main>
-  <div id="notificacion" class="notificacion"></div>
 
   <script>
+    // === CONFIGURACIÓN ===
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-    const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "12345678" };
+    const user = JSON.parse(sessionStorage.getItem("user")) || null;
+    if (!user) window.location.href = "index.html";
+
+    document.getElementById("bienvenida").textContent = `Bienvenido, ${user.nombre}`;
 
     const modulos = [
       { key: "induccion", nombre: "Inducción SST" },
@@ -74,22 +139,31 @@
       { key: "epp", nombre: "EPP" }
     ];
 
+    // === FUNCIONES BASE ===
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
       return texto.trim().split("\n").map(r => r.split(","));
     }
 
-    async function aplicarLogo() {
-      const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers = hoja2[0];
-      const colLogo = headers.indexOf("LINK LOGO");
-      if (colLogo === -1) return;
+    function convertirLinkDrive(link) {
+      if (!link) return "";
+      const match = link.match(/\/d\/([a-zA-Z0-9_-]+)\//);
+      return match ? `https://drive.google.com/uc?export=view&id=${match[1]}` : link;
+    }
 
-      const filaLogo = hoja2[1][colLogo];
-      if (!filaLogo) return;
-
-      document.getElementById("logoHeader").src = filaLogo;
+    async function cargarLogo() {
+      try {
+        const hoja2 = await obtenerCSV(URL_HOJA2);
+        const headers = hoja2[0];
+        const colLogo = headers.indexOf("LINK LOGO");
+        if (colLogo !== -1) {
+          const logoURL = convertirLinkDrive(hoja2[1][colLogo]);
+          if (logoURL) document.getElementById("logo").src = logoURL;
+        }
+      } catch (err) {
+        console.error("Error cargando logo:", err);
+      }
     }
 
     function transformarVideo(link) {
@@ -122,7 +196,7 @@
       const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const headers1 = hoja1[0];
-      const filaUsuario = hoja1.find(r => r[0] === user.dni);
+      const filaUsuario = hoja1.find(r => r.includes(user.dni));
       const filaLinks = hoja2[1];
 
       const cont = document.getElementById("contenedorModulos");
@@ -133,11 +207,28 @@
         return;
       }
 
+      // Columnas exactas
       const columnasHoja1 = {
-        induccion: { video: headers1.indexOf("VIDEO DE INDUCCION SST"), nota: headers1.indexOf("VIDEO DE INDUCCION SST") + 1, fecha: headers1.indexOf("VIDEO DE INDUCCION SST") + 2 },
-        primerosAuxilios: { video: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS"), nota: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS") + 1, fecha: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS") + 2 },
-        ergonomia: { video: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO"), nota: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO") + 1, fecha: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO") + 2 },
-        epp: { video: headers1.indexOf("VIDEO DE EPP"), nota: headers1.indexOf("VIDEO DE EPP") + 1, fecha: headers1.indexOf("VIDEO DE EPP") + 2 }
+        induccion: {
+          video: headers1.indexOf("VIDEO DE INDUCCION SST"),
+          nota: headers1.indexOf("VIDEO DE INDUCCION SST") + 1,
+          fecha: headers1.indexOf("VIDEO DE INDUCCION SST") + 2
+        },
+        primerosAuxilios: {
+          video: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS"),
+          nota: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS") + 1,
+          fecha: headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS") + 2
+        },
+        ergonomia: {
+          video: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO"),
+          nota: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO") + 1,
+          fecha: headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO") + 2
+        },
+        epp: {
+          video: headers1.indexOf("VIDEO DE EPP"),
+          nota: headers1.indexOf("VIDEO DE EPP") + 1,
+          fecha: headers1.indexOf("VIDEO DE EPP") + 2
+        }
       };
 
       for (let i = 0; i < modulos.length; i++) {
@@ -147,8 +238,9 @@
         const fechaInicio = filaUsuario[cols.fecha] || "";
         const vencimiento = calcularVencimiento(fechaInicio);
         const vencido = estaVencido(fechaInicio);
+
         const videoSrc = transformarVideo(filaLinks[i * 2]);
-        const formSrc  = transformarForm(filaLinks[i * 2 + 1]);
+        const formSrc = transformarForm(filaLinks[i * 2 + 1]);
 
         let estadoHTML = "";
         if (nota && parseFloat(nota) >= 12 && !vencido) {
@@ -163,7 +255,7 @@
 
         const html = `
           <div class="modulo">
-            <h3>Video de ${m.nombre}</h3>
+            <h3>${m.nombre}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
             <div class="info">
               ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
@@ -182,7 +274,7 @@
       window.location.href = "index.html";
     }
 
-    aplicarLogo();
+    cargarLogo();
     cargarModulos();
   </script>
 </body>
