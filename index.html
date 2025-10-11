@@ -3,102 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingreso a Capacitación SST</title>
+  <title>Ingreso a Plataforma SST</title>
   <style>
     body {
-      margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
+      margin: 0;
       height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
-      background-color: #f5f6fa;
-      background-size: 200px 200px;
-      background-position: 0 0, 100px 100px;
+      justify-content: center;
+      background-size: cover;
+      background-position: center;
       background-repeat: repeat;
-      animation: fadeIn 1.2s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      background-color: #f0f0f0;
     }
 
     .login-box {
-      background: rgba(255, 255, 255, 0.95);
-      padding: 40px 30px;
-      border-radius: 15px;
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+      background: rgba(255,255,255,0.92);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 380px;
       text-align: center;
-      width: 320px;
-      backdrop-filter: blur(6px);
-      transition: transform 0.3s ease;
-    }
-
-    .login-box:hover {
-      transform: scale(1.02);
     }
 
     h2 {
       color: #0078d7;
-      font-size: 22px;
       margin-bottom: 20px;
-      font-weight: 600;
     }
 
     input {
       width: 100%;
       padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 6px;
+      margin: 8px 0;
       border: 1px solid #ccc;
-      font-size: 15px;
+      border-radius: 8px;
+      font-size: 16px;
     }
 
     button {
       width: 100%;
       padding: 10px;
-      background-color: #0078d7;
+      background: #0078d7;
       color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
       font-size: 16px;
-      transition: background-color 0.3s ease;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
     }
 
     button:hover {
-      background-color: #005ea8;
+      background: #005fa3;
     }
 
     .error {
       color: red;
-      margin-top: 10px;
       font-size: 14px;
+      margin-top: 10px;
     }
 
-    footer {
-      position: absolute;
-      bottom: 10px;
-      font-size: 12px;
-      color: #666;
+    @media (max-width: 600px) {
+      body {
+        background-size: contain;
+      }
+      .login-box {
+        margin: 15px;
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="login-box">
     <h2>Ingreso a Capacitación SST</h2>
-    <input type="text" id="dni" placeholder="Ingrese su DNI o CE" maxlength="12" />
-    <input type="password" id="password" placeholder="Ingrese su Contraseña" />
+    <input type="text" id="dni" placeholder="Ingrese su DNI" maxlength="15">
+    <input type="password" id="clave" placeholder="Ingrese su Contraseña">
     <button onclick="login()">Ingresar</button>
-    <div id="error" class="error"></div>
+    <div class="error" id="errorMsg"></div>
   </div>
 
-  <footer>© Plataforma SST 2025</footer>
-
   <script>
-    // URLs de tus hojas de Google Sheets
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
@@ -111,69 +97,59 @@
     function convertirLinkDrive(link) {
       if (!link) return "";
       const match = link.match(/\/d\/([a-zA-Z0-9_-]+)\//);
-      if (match) {
-        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-      }
-      return link;
+      return match ? `https://drive.google.com/uc?export=view&id=${match[1]}` : link;
     }
 
-    async function aplicarFondo() {
+    async function cargarFondo() {
       try {
         const hoja2 = await obtenerCSV(URL_HOJA2);
         const headers = hoja2[0];
         const colLogo = headers.indexOf("LINK LOGO");
-        if (colLogo === -1) return;
-
-        const filaLogo = hoja2[1][colLogo];
-        if (!filaLogo) return;
-
-        const logoURL = convertirLinkDrive(filaLogo);
-        document.body.style.backgroundImage = `url('${logoURL}'), url('${logoURL}')`;
-        document.body.style.backgroundSize = "200px 200px";
-        document.body.style.backgroundPosition = "0 0, 100px 100px";
-        document.body.style.backgroundRepeat = "repeat";
+        if (colLogo !== -1) {
+          const logoURL = convertirLinkDrive(hoja2[1][colLogo]);
+          if (logoURL) {
+            document.body.style.backgroundImage = `repeating-linear-gradient(45deg, transparent 0 40px, rgba(0,0,0,0.05) 40px 80px), url('${logoURL}')`;
+            document.body.style.backgroundSize = "150px 150px";
+          }
+        }
       } catch (err) {
-        console.error("Error aplicando fondo:", err);
+        console.error("Error cargando logo:", err);
       }
     }
 
     async function login() {
       const dni = document.getElementById("dni").value.trim();
-      const pass = document.getElementById("password").value.trim();
-      const errorBox = document.getElementById("error");
-      errorBox.textContent = "";
+      const clave = document.getElementById("clave").value.trim();
+      const errorMsg = document.getElementById("errorMsg");
 
-      if (!dni || !pass) {
-        errorBox.textContent = "Por favor, complete ambos campos.";
+      if (!dni || !clave) {
+        errorMsg.textContent = "Ingrese su DNI y contraseña.";
         return;
       }
 
       try {
-        const hoja1 = await obtenerCSV(URL_HOJA1);
-        const headers = hoja1[0];
-        const colDni = headers.indexOf("DNI/CE");
-        const colPass = headers.indexOf("CONTRASEÑA");
+        const datos = await obtenerCSV(URL_HOJA1);
+        const headers = datos[0];
+        const idxDNI = headers.indexOf("DNI");
+        const idxClave = headers.indexOf("CONTRASEÑA");
+        const idxNombre = headers.indexOf("NOMBRE COMPLETO");
 
-        const usuario = hoja1.find(row => row[colDni] === dni && row[colPass] === pass);
+        const usuario = datos.find(f => f[idxDNI] === dni && f[idxClave] === clave);
 
-        if (!usuario) {
-          errorBox.textContent = "DNI o contraseña incorrectos.";
-          return;
+        if (usuario) {
+          const nombre = usuario[idxNombre];
+          sessionStorage.setItem("user", JSON.stringify({ dni, nombre }));
+          window.location.href = "capacitacion.html";
+        } else {
+          errorMsg.textContent = "DNI o contraseña incorrectos.";
         }
-
-        sessionStorage.setItem("user", JSON.stringify({
-          dni: dni,
-          nombre: usuario[headers.indexOf("NOMBRE")] || ""
-        }));
-
-        window.location.href = "capacitacion.html";
       } catch (err) {
-        console.error("Error al verificar usuario:", err);
-        errorBox.textContent = "Error al conectar con los datos.";
+        console.error(err);
+        errorMsg.textContent = "Error al conectar con la base de datos.";
       }
     }
 
-    aplicarFondo();
+    cargarFondo();
   </script>
 </body>
 </html>
