@@ -5,127 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capacitación SST</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f9;
-    }
-
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
     header {
-      background: #0078d7;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #0078d7; color: white;
+      padding: 10px 20px; display: flex;
+      justify-content: space-between; align-items: center;
       flex-wrap: wrap;
-      position: sticky;
-      top: 0;
-      z-index: 100;
     }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .header-left img {
-      height: 40px;
-    }
-
-    .header-left h2 {
-      margin: 0;
-      font-size: 18px;
-    }
-
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header-left img { height: 40px; }
+    .header-left h2 { margin: 0; font-size: 18px; }
+    .header-right { text-align: right; }
     button {
-      background-color: #ff4d4d;
-      color: white;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.3s;
+      background-color: #ff4d4d; color: white; border: none;
+      padding: 8px 15px; border-radius: 6px; cursor: pointer;
     }
+    button:hover { background-color: #cc0000; }
 
-    button:hover {
-      background-color: #cc0000;
-    }
-
-    /* 🔹 Contenedor de módulos 2x2 */
     main {
       padding: 20px;
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
       gap: 20px;
-      justify-items: center;
-      align-items: start;
-    }
-
-    /* 🔹 En pantallas pequeñas (celulares) → 1 por fila */
-    @media (max-width: 800px) {
-      main {
-        grid-template-columns: 1fr;
-      }
     }
 
     .modulo {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 600px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      background: white; border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      overflow: hidden; display: flex; flex-direction: column;
     }
-
-    .modulo:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
-    }
-
     .modulo h3 {
-      margin: 0;
-      padding: 10px;
-      background: #e9ecef;
-      color: #0078d7;
-      font-size: 16px;
-      text-align: center;
+      margin: 0; padding: 10px; background: #e9ecef;
     }
 
-    iframe.videoFrame {
-      border: none;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-    }
-
-    iframe.formFrame {
-      border: none;
-      width: 100%;
-      height: 420px;
-      display: none;
-    }
+    iframe.videoFrame { border: none; width: 100%; aspect-ratio: 16/9; }
+    iframe.formFrame { border: none; width: 100%; height: 420px; display: none; }
 
     .info {
-      padding: 10px;
-      font-size: 14px;
-      background: #fafafa;
-      border-top: 1px solid #eee;
+      padding: 10px; font-size: 14px;
+      background: #fafafa; border-top: 1px solid #eee;
     }
-
-    .aprobado {
-      color: green;
-      font-weight: bold;
-    }
-
-    .vencido {
-      color: red;
-      font-weight: bold;
-    }
+    .aprobado { color: green; font-weight: bold; }
+    .vencido { color: red; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -134,7 +55,10 @@
       <img id="logo" alt="Logo">
       <h2>Plataforma de Capacitación SST</h2>
     </div>
-    <button onclick="logout()">Cerrar sesión</button>
+    <div class="header-right">
+      <p id="userName" style="margin:0;font-size:14px;"></p>
+      <button onclick="logout()">Cerrar sesión</button>
+    </div>
   </header>
 
   <main id="contenedorModulos"></main>
@@ -144,6 +68,8 @@
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
     const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
+    document.getElementById("userName").textContent = user?.nombre || "";
+
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
@@ -152,21 +78,21 @@
 
     async function cargarLogo() {
       const hoja2 = await obtenerCSV(URL_HOJA2);
-      const ultimaCol = hoja2[0].length - 1;
-      const logoURL = hoja2[1][ultimaCol]?.trim();
-      if (logoURL) {
-        document.getElementById("logo").src = logoURL;
+      const headers = hoja2[0];
+      const idxLogo = headers.findIndex(h => h.trim().toUpperCase() === "LINK LOGO");
+      if (idxLogo !== -1) {
+        document.getElementById("logo").src = hoja2[1][idxLogo].trim();
       }
     }
 
     function transformarVideo(link) {
-      return link?.includes("/view") ? link.replace("/view", "/preview") : link;
+      if (typeof link !== "string") return "";
+      return link.includes("/view") ? link.replace("/view", "/preview") : link;
     }
-
     function transformarForm(link) {
-      return link?.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
+      if (typeof link !== "string") return "";
+      return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
     }
-
     function calcularVencimiento(fechaInicio) {
       if (!fechaInicio) return "";
       const [d, m, y] = fechaInicio.split("/");
@@ -174,7 +100,6 @@
       fecha.setFullYear(fecha.getFullYear() + 1);
       return fecha.toLocaleDateString("es-PE");
     }
-
     function estaVencido(fechaInicio) {
       if (!fechaInicio) return true;
       const [d, m, y] = fechaInicio.split("/");
@@ -190,33 +115,32 @@
       const headers1 = hoja1[0];
       const filaUsuario = hoja1.find(r => r[1] === user.dni);
       const filaLinks = hoja2[1];
+
       const cont = document.getElementById("contenedorModulos");
+      cont.innerHTML = "";
 
       if (!filaUsuario) {
         cont.innerHTML = "<p>No se encontró tu registro.</p>";
         return;
       }
 
-      const columnas = {
-        induccion: { video: "VIDEO DE INDUCCION SST" },
-        primerosAuxilios: { video: "VIDEO DE PRIMEROS AUXILIOS" },
-        ergonomia: { video: "VIDEO DE ERGONOMIA EN EL TRABAJO" },
-        epp: { video: "VIDEO DE EPP" }
-      };
+      const columnas = [
+        "VIDEO DE INDUCCION SST",
+        "VIDEO DE PRIMEROS AUXILIOS",
+        "VIDEO DE ERGONOMIA EN EL TRABAJO",
+        "VIDEO DE EPP"
+      ];
 
-      const modulos = Object.keys(columnas);
-      cont.innerHTML = "";
-
-      for (let i = 0; i < modulos.length; i++) {
-        const nombre = modulos[i];
-        const base = columnas[nombre].video;
+      for (let i = 0; i < columnas.length; i++) {
+        const base = columnas[i];
         const idxVideo = headers1.indexOf(base);
         const nota = filaUsuario[idxVideo + 1] || "";
         const fechaInicio = filaUsuario[idxVideo + 2] || "";
         const vencimiento = calcularVencimiento(fechaInicio);
         const vencido = estaVencido(fechaInicio);
+
         const videoSrc = transformarVideo(filaLinks[i * 2]);
-        const formSrc = transformarForm(filaLinks[i * 2 + 1]);
+        const formSrc  = transformarForm(filaLinks[i * 2 + 1]);
 
         let estadoHTML = "";
         if (nota && parseFloat(nota) >= 12 && !vencido)
@@ -230,7 +154,7 @@
 
         cont.insertAdjacentHTML("beforeend", `
           <div class="modulo">
-            <h3>${base.replace("VIDEO DE ", "")}</h3>
+            <h3>${base.replace("VIDEO DE ", "Video de ")}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
             <div class="info">
               ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
