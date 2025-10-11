@@ -46,7 +46,6 @@
     button:hover {
       background-color: #cc0000;
     }
-
     main {
       padding: 20px;
       display: grid;
@@ -54,7 +53,6 @@
       gap: 20px;
       box-sizing: border-box;
     }
-
     .modulo {
       background: white;
       border-radius: 10px;
@@ -63,7 +61,6 @@
       display: flex;
       flex-direction: column;
     }
-
     .modulo h3 {
       margin: 0;
       padding: 12px;
@@ -72,40 +69,28 @@
       font-size: 16px;
       font-weight: 600;
     }
-
     iframe.videoFrame {
       width: 100%;
       aspect-ratio: 16 / 9;
       border: none;
     }
-
     iframe.formFrame {
       width: 100%;
       height: 420px;
       border: none;
       display: none;
     }
-
     .info {
       padding: 10px 15px;
       font-size: 14px;
       background: #fafafa;
       border-top: 1px solid #eee;
     }
-
-    .aprobado {
-      color: green;
-      font-weight: bold;
-    }
-    .vencido {
-      color: red;
-      font-weight: bold;
-    }
+    .aprobado { color: green; font-weight: bold; }
+    .vencido { color: red; font-weight: bold; }
 
     @media (max-width: 900px) {
-      main {
-        grid-template-columns: 1fr;
-      }
+      main { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -141,7 +126,7 @@
 
     // Convierte enlaces de Google Drive a vista directa
     function driveToPreview(url) {
-      if (typeof url !== "string") return url || "";
+      if (!url) return "";
       const m = url.match(/(?:\/d\/|id=)([-\w]{20,})/);
       if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
       return url;
@@ -151,34 +136,31 @@
     async function cargarLogoYNombre() {
       try {
         const hoja2 = await obtenerCSV(URL_HOJA2);
-        const headers = hoja2[0].map((h) => (h || "").trim().toUpperCase());
+        const headers = hoja2[0].map((h) => h.toUpperCase());
         const fila = hoja2[1];
 
         const idxLogo = headers.indexOf("LINK LOGO");
-        let logoUrl = "";
-        if (idxLogo !== -1) logoUrl = fila[idxLogo] || "";
-        else logoUrl = fila[fila.length - 2] || fila[fila.length - 1] || "";
+        let logoUrl = idxLogo !== -1 ? fila[idxLogo] : "";
 
-        logoUrl = (logoUrl || "").trim();
         if (logoUrl) {
           const logoImg = document.getElementById("logo");
-          logoImg.src = driveToPreview(logoUrl) || logoUrl;
+          logoImg.src = driveToPreview(logoUrl);
         }
 
         const nombre = user.nombre || "Usuario";
         document.getElementById("bienvenida").textContent = `Bienvenido(a): ${nombre}`;
       } catch (e) {
-        console.warn("No se pudo cargar logo y nombre:", e);
+        console.warn("Error al cargar logo y nombre:", e);
       }
     }
 
-    // Transformar enlaces
+    // Funciones de transformación de links
     function transformarVideo(link) {
-      if (typeof link !== "string" || !link) return "";
+      if (!link) return "";
       return link.includes("/view") ? link.replace("/view", "/preview") : link;
     }
     function transformarForm(link) {
-      if (typeof link !== "string" || !link) return "";
+      if (!link) return "";
       if (link.includes("viewform")) {
         return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
       }
@@ -193,7 +175,6 @@
       fecha.setFullYear(fecha.getFullYear() + 1);
       return fecha.toLocaleDateString("es-PE");
     }
-
     function estaVencido(fechaInicio) {
       if (!fechaInicio) return true;
       const [d, m, y] = fechaInicio.split("/");
@@ -203,14 +184,13 @@
       return hoy > fecha;
     }
 
-    // Cargar módulos de capacitación
+    // Cargar módulos
     async function cargarModulos() {
       const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const headers1 = hoja1[0];
       const filaUsuario = hoja1.find((r) => r[1] === user.dni);
       const filaLinks = hoja2[1];
-      const headers2 = hoja2[0];
 
       const cont = document.getElementById("contenedorModulos");
       cont.innerHTML = "";
@@ -220,8 +200,7 @@
         return;
       }
 
-      // Buscar columnas de VIDEO
-      const columnasVideo = headers1.filter((h) => h.includes("VIDEO"));
+      const columnasVideo = headers1.filter((h) => h.toUpperCase().includes("VIDEO DE "));
 
       columnasVideo.forEach((col, i) => {
         const idxVideo = headers1.indexOf(col);
@@ -232,7 +211,8 @@
 
         const videoSrc = transformarVideo(filaLinks[i * 2]);
         const formSrc = transformarForm(filaLinks[i * 2 + 1]);
-        const tema = filaLinks[filaLinks.length > 10 ? 10 + i : i * 2]; // por si hay TEMAS en hoja
+
+        const tituloModulo = col.replace(/VIDEO DE /i, "").trim();
 
         let estadoHTML = "";
         if (nota >= 12 && !vencido)
@@ -247,7 +227,7 @@
           "beforeend",
           `
           <div class="modulo">
-            <h3>${tema || col.replace("VIDEO DE ", "").trim()}</h3>
+            <h3>${tituloModulo}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
             <div class="info">
               ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
