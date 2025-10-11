@@ -21,7 +21,10 @@
 </head>
 <body>
   <header>
-    <h2>Plataforma de Capacitación SST</h2>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <img id="logo" src="" alt="Logo SST" style="height:45px; border-radius:6px; display:none;">
+      <h2>Plataforma de Capacitación SST</h2>
+    </div>
     <button onclick="logout()">Cerrar sesión</button>
   </header>
 
@@ -29,10 +32,9 @@
   <div id="notificacion" class="notificacion"></div>
 
   <script>
-    // === CONFIGURACIÓN ===
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
-    const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "12345678" };
+    const user = JSON.parse(sessionStorage.getItem("user")) || { dni: "" };
 
     const modulos = [
       { key: "induccion", nombre: "Inducción SST" },
@@ -41,7 +43,6 @@
       { key: "epp", nombre: "EPP" }
     ];
 
-    // === FUNCIONES BASE ===
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
@@ -78,8 +79,17 @@
       const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const headers1 = hoja1[0];
+      const headers2 = hoja2[0];
       const filaUsuario = hoja1.find(r => r[0] === user.dni);
-      const filaLinks = hoja2[1]; // fila con todos los links
+      const filaLinks = hoja2[1];
+
+      // Mostrar logo en el dashboard
+      const idxLogo = headers2.indexOf("LINK LOGO");
+      if (idxLogo !== -1 && filaLinks[idxLogo]) {
+        const logoImg = document.getElementById("logo");
+        logoImg.src = filaLinks[idxLogo];
+        logoImg.style.display = "block";
+      }
 
       const cont = document.getElementById("contenedorModulos");
       cont.innerHTML = "";
@@ -89,7 +99,6 @@
         return;
       }
 
-      // 🧩 Mapeo de columnas exactas
       const columnasHoja1 = {
         induccion: {
           video: headers1.indexOf("VIDEO DE INDUCCION SST"),
@@ -122,9 +131,8 @@
         const vencimiento = calcularVencimiento(fechaInicio);
         const vencido = estaVencido(fechaInicio);
 
-        // video y formulario desde hoja 2
         const videoSrc = transformarVideo(filaLinks[i * 2]);
-        const formSrc  = transformarForm(filaLinks[i * 2 + 1]);
+        const formSrc = transformarForm(filaLinks[i * 2 + 1]);
 
         let estadoHTML = "";
         if (nota && parseFloat(nota) >= 12 && !vencido) {
@@ -162,3 +170,4 @@
   </script>
 </body>
 </html>
+
