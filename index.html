@@ -6,155 +6,80 @@
   <title>Ingreso - Capacitación SST</title>
   <style>
     body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-      position: relative;
-      background-color: #f4f6f9;
+      margin: 0; font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0078d7, #00aaff);
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; color: white;
     }
-
-    /* Patrón tipo ajedrez */
-    body::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px),
-        linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
-      background-size: 120px 120px;
-      z-index: 0;
+    .login-container {
+      background: white; color: #333; padding: 30px;
+      border-radius: 12px; width: 320px; text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
-
-    /* Logo como marca de agua en mosaico */
-    body::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-size: 120px 120px;
-      background-repeat: repeat;
-      background-position: 60px 60px;
-      opacity: 0.07;
-      z-index: 0;
-    }
-
-    .login-box {
-      position: relative;
-      z-index: 1;
-      background: rgba(255, 255, 255, 0.92);
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
-      text-align: center;
-      width: 320px;
-      backdrop-filter: blur(4px);
-    }
-
-    .login-box h2 {
-      margin-bottom: 20px;
-      color: #0078d4;
-    }
-
+    h2 { margin-bottom: 20px; color: #0078d7; }
     input {
-      width: 90%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 15px;
+      width: 100%; padding: 10px; margin: 8px 0;
+      border: 1px solid #ccc; border-radius: 6px;
     }
-
     button {
-      width: 95%;
-      padding: 10px;
-      background-color: #0078d4;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      background-color: #005a9e;
-    }
-
-    .error {
-      color: red;
+      width: 100%; padding: 10px;
+      background-color: #0078d7; color: white;
+      border: none; border-radius: 6px; cursor: pointer;
       margin-top: 10px;
-      font-size: 14px;
     }
+    button:hover { background-color: #005fa3; }
+    .error { color: red; margin-top: 10px; font-size: 14px; }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <h2>Acceso a Capacitación SST</h2>
-    <input type="text" id="dni" placeholder="DNI">
+  <div class="login-container">
+    <h2>Ingreso Capacitación SST</h2>
+    <input type="text" id="dni" placeholder="DNI o CE">
     <input type="password" id="password" placeholder="Contraseña">
     <button onclick="login()">Ingresar</button>
-    <div id="error" class="error"></div>
+    <p class="error" id="error"></p>
   </div>
 
   <script>
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
-    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-    let logoUrl = "";
-
-    async function cargarLogo() {
-      const resp = await fetch(URL_HOJA2);
-      const data = await resp.text();
-      const filas = data.trim().split("\n").map(r => r.split(","));
-      const ultimaColumna = filas[0].length - 1;
-      const logoLink = filas[1][ultimaColumna].trim();
-      logoUrl = logoLink;
-      document.body.style.setProperty("--logo-url", `url('${logoUrl}')`);
-      document.body.style.backgroundImage = `url('${logoUrl}')`;
-      document.body.style.setProperty("background-size", "120px 120px");
-    }
-
-    async function obtenerUsuarios() {
-      const resp = await fetch(URL_HOJA1);
+    async function obtenerCSV(url) {
+      const resp = await fetch(url);
       const texto = await resp.text();
       return texto.trim().split("\n").map(r => r.split(","));
     }
 
     async function login() {
       const dni = document.getElementById("dni").value.trim();
-      const pass = document.getElementById("password").value.trim();
+      const password = document.getElementById("password").value.trim();
       const error = document.getElementById("error");
 
-      if (!dni || !pass) {
-        error.textContent = "Por favor, completa todos los campos.";
-        return;
-      }
+      const datos = await obtenerCSV(URL_HOJA1);
+      const encabezados = datos[0];
+      const fila = datos.find((r, i) => i > 0 && r[1] === dni);
 
-      const data = await obtenerUsuarios();
-      const encabezados = data[0];
-      const idxDNI = encabezados.findIndex(c => c.includes("DNI"));
-      const idxPass = encabezados.findIndex(c => c.includes("CONTRASEÑA"));
-      const idxNombre = encabezados.findIndex(c => c.includes("NOMBRE"));
-
-      const user = data.find(row => row[idxDNI] === dni && row[idxPass] === pass);
-
-      if (!user) {
+      if (!fila) {
         error.textContent = "DNI o contraseña incorrectos.";
         return;
       }
 
-      sessionStorage.setItem("user", JSON.stringify({
-        dni,
-        nombre: user[idxNombre]
-      }));
+      const contraseña = fila[2]?.trim();
+      if (password !== contraseña) {
+        error.textContent = "DNI o contraseña incorrectos.";
+        return;
+      }
 
+      const user = {
+        nombre: fila[0],
+        dni: fila[1],
+        fechaIngreso: fila[3],
+        estado: fila[4]
+      };
+
+      sessionStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("loggedIn", "true");
       window.location.href = "capacitacion.html";
     }
-
-    cargarLogo();
   </script>
 </body>
 </html>
