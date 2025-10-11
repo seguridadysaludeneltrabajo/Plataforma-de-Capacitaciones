@@ -1,253 +1,235 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Plataforma de Capacitación SST</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capacitación SST</title>
   <style>
-    html,body { height:100%; margin:0; font-family: "Segoe UI", Arial, sans-serif; background:#f4f6f9; }
-    header {
-      background:#0078d7; color:white; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px;
-      position:sticky; top:0; z-index:50;
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
     }
-    .header-left { display:flex; align-items:center; gap:12px; }
-    .header-left img { height:46px; border-radius:8px; background:white; padding:4px; object-fit:contain; }
-    .header-left .title { font-size:18px; font-weight:600; }
-    .welcome { font-size:15px; opacity:0.95; }
-    .btn-logout { background:#ff4d4d; color:white; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
-    .btn-logout:hover { background:#cc0000; }
+    header {
+      background: #0078d7;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-left img {
+      height: 40px;
+      border-radius: 6px;
+    }
+    .header-left h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    button {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #cc0000;
+    }
 
     main {
-      padding:20px;
-      display:grid;
-      gap:20px;
-      box-sizing:border-box;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 20px;
     }
 
-    /* grid: 2 columns on desktop, 1 on mobile */
-    @media(min-width:920px){
-      main { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media(max-width:919px){
-      main { grid-template-columns: 1fr; }
+    .modulo {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
-    .module {
-      background:white; border-radius:10px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); overflow:hidden; display:flex; flex-direction:column;
+    .modulo h3 {
+      margin: 0;
+      padding: 10px;
+      background: #e9ecef;
     }
-    .module h3 { margin:0; padding:12px; background:#eef3f9; color:#0078d7; font-size:16px; }
-    .video { width:100%; aspect-ratio:16/9; border:0; }
-    .form { width:100%; height:420px; border:0; }
-    .meta { padding:12px; font-size:14px; background:#fafafa; border-top:1px solid #eee; }
-    .meta p { margin:6px 0; }
 
-    /* small screens adjust iframe heights */
-    @media (max-width:640px){
-      .form { height:380px; }
+    iframe.videoFrame {
+      border: none;
+      width: 100%;
+      aspect-ratio: 16/9;
+    }
+
+    iframe.formFrame {
+      border: none;
+      width: 100%;
+      height: 420px;
+      display: none;
+    }
+
+    .info {
+      padding: 10px;
+      font-size: 14px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+    }
+
+    .aprobado {
+      color: green;
+      font-weight: bold;
+    }
+    .vencido {
+      color: red;
+      font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+      main {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <header>
     <div class="header-left">
-      <img id="logo" alt="Logo empresa" src="">
-      <div>
-        <div class="title">Plataforma de Capacitación SST</div>
-        <div id="welcome" class="welcome">Bienvenido(a):</div>
-      </div>
+      <img id="logo" alt="Logo">
+      <h2 id="bienvenida">Bienvenido(a):</h2>
     </div>
-    <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    <button onclick="logout()">Cerrar sesión</button>
   </header>
 
-  <main id="modulesContainer" aria-live="polite"></main>
+  <main id="contenedorModulos"></main>
 
   <script>
-    // ---------- CONFIG ----------
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+    const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
-    // ---------- CSV parser (same as index) ----------
-    function parseCSV(text){
-      const rows = [];
-      let cur = "", row = [], inQuotes = false;
-      for (let i=0;i<text.length;i++){
-        const ch = text[i];
-        const next = text[i+1];
-        if (ch === '"') {
-          if (inQuotes && next === '"') { cur += '"'; i++; continue; }
-          inQuotes = !inQuotes;
-          continue;
-        }
-        if (!inQuotes && ch === ',') { row.push(cur); cur = ""; continue; }
-        if (!inQuotes && (ch === '\n' || ch === '\r')) {
-          if (ch === '\r' && text[i+1]==='\n') i++;
-          row.push(cur); rows.push(row); row=[]; cur=""; continue;
-        }
-        cur += ch;
-      }
-      if (cur!=="" || row.length) row.push(cur);
-      if (row.length) rows.push(row);
-      return rows.map(r => r.map(c => (c||"").trim()));
-    }
-
-    function driveToPreview(url){
-      if (typeof url !== "string") return url || "";
-      const m = url.match(/(?:\/d\/|id=)([-\w]{20,})/);
-      if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
-      return url;
-    }
-
-    async function fetchCSV(url){
+    async function obtenerCSV(url) {
       const resp = await fetch(url);
-      const text = await resp.text();
-      return parseCSV(text);
+      const texto = await resp.text();
+      return texto.trim().split("\n").map(r => r.split(","));
     }
 
-    // ---------- main flow ----------
-    async function init(){
-      const sessionUser = JSON.parse(sessionStorage.getItem("user") || "{}");
-      if (!sessionUser || !sessionUser.dni) {
-        // not logged in
-        window.location.href = "index.html";
+    async function cargarLogoYNombre() {
+      const hoja2 = await obtenerCSV(URL_HOJA2);
+      const ultimaColLogo = hoja2[0].length - 2;
+      const logoUrl = hoja2[1][ultimaColLogo].trim();
+      if (logoUrl) document.getElementById("logo").src = logoUrl;
+
+      const nombre = user.nombre || "Usuario";
+      document.getElementById("bienvenida").textContent = `Bienvenido(a): ${nombre}`;
+    }
+
+    function transformarVideo(link) {
+      if (!link) return "";
+      return link.includes("/view") ? link.replace("/view", "/preview") : link;
+    }
+
+    function transformarForm(link) {
+      if (!link) return "";
+      if (link.includes("viewform")) {
+        return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
+      }
+      return link;
+    }
+
+    function calcularVencimiento(fechaInicio) {
+      if (!fechaInicio) return "";
+      const [d, m, y] = fechaInicio.split("/");
+      const fecha = new Date(`${y}-${m}-${d}`);
+      fecha.setFullYear(fecha.getFullYear() + 1);
+      return fecha.toLocaleDateString("es-PE");
+    }
+
+    function estaVencido(fechaInicio) {
+      if (!fechaInicio) return true;
+      const [d, m, y] = fechaInicio.split("/");
+      const fecha = new Date(`${y}-${m}-${d}`);
+      const hoy = new Date();
+      fecha.setFullYear(fecha.getFullYear() + 1);
+      return hoy > fecha;
+    }
+
+    async function cargarModulos() {
+      const hoja1 = await obtenerCSV(URL_HOJA1);
+      const hoja2 = await obtenerCSV(URL_HOJA2);
+      const headers1 = hoja1[0];
+      const filaUsuario = hoja1.find(r => r[1] === user.dni);
+      const filaLinks = hoja2[1];
+      const temas = hoja2[1][hoja2[1].length - 1].split(";");
+
+      const cont = document.getElementById("contenedorModulos");
+      cont.innerHTML = "";
+
+      if (!filaUsuario) {
+        cont.innerHTML = "<p>No se encontró tu registro.</p>";
         return;
       }
-      try {
-        // load hoja1 to get full name & user row
-        const hoja1 = await fetchCSV(URL_HOJA1);
-        const headers1 = (hoja1[0]||[]).map(h=> (h||"").toUpperCase());
-        // find indices
-        const idxDNI = headers1.findIndex(h => h.includes("DNI"));
-        const idxNombre = headers1.findIndex(h => h.includes("NOMBRE"));
-        // find user row by dni
-        const filaUsuario = hoja1.find((r,i) => i>0 && (r[idxDNI]||"").trim() === sessionUser.dni);
 
-        const displayName = (filaUsuario && filaUsuario[idxNombre]) ? filaUsuario[idxNombre] : (sessionUser.nombre || sessionUser.dni);
+      const columnas = [
+        "VIDEO DE INDUCCION SST",
+        "VIDEO DE PRIMEROS AUXILIOS",
+        "VIDEO DE ERGONOMIA EN EL TRABAJO",
+        "VIDEO DE EPP"
+      ];
 
-        document.getElementById("welcome").textContent = `Bienvenido(a): ${displayName}`;
+      columnas.forEach((col, i) => {
+        const idxVideo = headers1.indexOf(col);
+        const nota = parseFloat(filaUsuario[idxVideo + 1] || "0");
+        const fechaInicio = filaUsuario[idxVideo + 2] || "";
+        const vencimiento = calcularVencimiento(fechaInicio);
+        const vencido = estaVencido(fechaInicio);
 
-        // load hoja2 for links, logo, temas
-        const hoja2 = await fetchCSV(URL_HOJA2);
-        if (!hoja2 || hoja2.length < 2) {
-          document.getElementById("modulesContainer").innerHTML = "<p>Error: hoja con enlaces vacía.</p>";
-          return;
-        }
-        const headers2 = hoja2[0];
-        const filaLinks = hoja2[1];
+        const videoSrc = transformarVideo(filaLinks[i * 2]);
+        const formSrc = transformarForm(filaLinks[i * 2 + 1]);
+        const tema = temas[i] || col.replace("VIDEO DE ", "");
 
-        // find LINK_LOGO and TEMAS
-        const idxLogo = headers2.map(h => (h||"").trim().toUpperCase()).indexOf("LINK LOGO");
-        const idxTemas = headers2.map(h => (h||"").trim().toUpperCase()).indexOf("TEMAS");
+        let estadoHTML = "";
+        if (nota >= 12 && !vencido)
+          estadoHTML = `<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${vencimiento}.</p>`;
+        else if (vencido && fechaInicio)
+          estadoHTML = `<p class="vencido">⚠️ Vencido el ${vencimiento}. Debe volver a rendir la evaluación.</p>`;
+        else
+          estadoHTML = `<p>🕓 Pendiente de evaluación.</p>`;
 
-        const logoRaw = (idxLogo !== -1 ? filaLinks[idxLogo] : filaLinks[filaLinks.length-2]) || "";
-        const temasRaw = (idxTemas !== -1 ? filaLinks[idxTemas] : filaLinks[filaLinks.length-1]) || "";
+        const mostrarForm = nota < 12 || vencido;
 
-        if (logoRaw) {
-          document.getElementById("logo").src = driveToPreview(logoRaw) || logoRaw;
-        }
-
-        // parse temas (comma-separated)
-        const temas = temasRaw.split(",").map(t => t.trim()).filter(t => t);
-
-        // Expected order of videos in hoja2: VINDUCCION, EVAL, VPRIMEROS, EVAL, VERGON, EVAL, VEPP, EVAL
-        // We'll pick video links at indices 0,2,4,6 and forms at 1,3,5,7 (if present)
-        const videos = [];
-        for (let i = 0; i < 8; i += 2) {
-          videos.push( filaLinks[i] ? filaLinks[i].trim() : "" );
-        }
-        const forms = [];
-        for (let i = 1; i < 8; i += 2) {
-          forms.push( filaLinks[i] ? filaLinks[i].trim() : "" );
-        }
-
-        // build modules array using temas[] as titles (fallback to generic)
-        const moduleTitles = [
-          temas[0] || "Inducción SST",
-          temas[1] || "Primeros Auxilios",
-          temas[2] || "Ergonomía en el Trabajo",
-          temas[3] || "EPP"
-        ];
-
-        const container = document.getElementById("modulesContainer");
-        container.innerHTML = "";
-
-        // For each module, get user's nota & fecha from hoja1 using headers
-        const idxVideoHeaders = [
-          headers1.indexOf("VIDEO DE INDUCCION SST"),
-          headers1.indexOf("VIDEO DE PRIMEROS AUXILIOS"),
-          headers1.indexOf("VIDEO DE ERGONOMIA EN EL TRABAJO"),
-          headers1.indexOf("VIDEO DE EPP")
-        ];
-
-        for (let i=0; i<4; i++){
-          const title = moduleTitles[i];
-          const videoLinkRaw = videos[i] || "";
-          const formLinkRaw = forms[i] || "";
-          // make safe preview for drive links
-          const videoSrc = driveToPreview(videoLinkRaw) || videoLinkRaw;
-          const formSrc = formLinkRaw ? (formLinkRaw.includes("?") ? formLinkRaw + "&embedded=true" : formLinkRaw + "?embedded=true") : "";
-
-          // user data: nota and fecha are columns next to header video in hoja1
-          let nota = "";
-          let fechaInicio = "";
-          const vidHeaderIdx = idxVideoHeaders[i];
-          if (vidHeaderIdx >= 0 && filaUsuario) {
-            nota = filaUsuario[vidHeaderIdx + 1] || "";
-            fechaInicio = filaUsuario[vidHeaderIdx + 2] || "";
-          }
-
-          // vencimiento logic (1 año)
-          let vencimiento = "";
-          let vencido = false;
-          if (fechaInicio) {
-            const parts = fechaInicio.split("/");
-            if (parts.length === 3) {
-              const [d,m,y] = parts;
-              const date = new Date(`${y}-${m}-${d}`);
-              date.setFullYear(date.getFullYear() + 1);
-              vencimiento = date.toLocaleDateString("es-PE");
-              vencido = (new Date()) > date;
-            }
-          }
-
-          let estadoHTML = "";
-          if (nota && parseFloat(nota) >= 12 && !vencido) {
-            estadoHTML = `<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${vencimiento}.</p>`;
-          } else if (vencido && fechaInicio) {
-            estadoHTML = `<p class="vencido">⚠️ Vencido el ${vencimiento}. Debe volver a rendir la evaluación.</p>`;
-          } else {
-            estadoHTML = `<p>🕓 Pendiente de evaluación.</p>`;
-          }
-
-          // Create module element
-          const moduleHTML = `
-            <article class="module" role="article" aria-labelledby="modtitle-${i}">
-              <h3 id="modtitle-${i}">${title}</h3>
-              <iframe class="video" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-              <div class="meta">
-                ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
-                ${vencimiento ? `<p>📆 Vencimiento: ${vencimiento}</p>` : ""}
-                ${estadoHTML}
-                ${formSrc ? `<p><a href="${formSrc}" target="_blank" rel="noopener">Abrir evaluación</a></p>` : ""}
-              </div>
-            </article>
-          `;
-          container.insertAdjacentHTML('beforeend', moduleHTML);
-        }
-
-      } catch (e) {
-        console.error("Error inicializando plataforma:", e);
-        document.getElementById("modulesContainer").innerHTML = "<p>Error cargando datos. Revisa consola.</p>";
-      }
+        cont.insertAdjacentHTML("beforeend", `
+          <div class="modulo">
+            <h3>${tema}</h3>
+            <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+            <div class="info">
+              ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
+              ${vencimiento ? `<p>📆 Fecha de vencimiento: ${vencimiento}</p>` : ""}
+              ${estadoHTML}
+            </div>
+            ${mostrarForm ? `<iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>` : ""}
+          </div>
+        `);
+      });
     }
 
-    function logout(){
+    function logout() {
       sessionStorage.clear();
       window.location.href = "index.html";
     }
 
-    // run
-    init();
+    cargarLogoYNombre();
+    cargarModulos();
   </script>
 </body>
 </html>
-
