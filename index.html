@@ -1,110 +1,212 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acceso a Capacitación SST</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ingreso - Capacitación SST</title>
   <style>
+    :root { --logo-url: none; }
+
+    html,body { height:100%; margin:0; font-family: "Segoe UI", Arial, sans-serif; }
+
+    /* Fondo: gradiente + pseudo-elemento con logo repetido y blur (agua moderna) */
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: linear-gradient(to bottom right, rgba(0,120,215,0.6), rgba(0,200,255,0.6)), 
-                  url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80');
-      background-size: cover;
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh;
+      background: linear-gradient(135deg, rgba(0,120,215,0.18), rgba(0,200,255,0.12));
+      position: relative;
+      overflow: hidden;
+    }
+    body::before {
+      content:"";
+      position: absolute; inset:0; z-index:0;
+      background-image:
+        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 140px 140px;
+      pointer-events: none;
+    }
+    body::after {
+      content: "";
+      position: absolute; inset:0; z-index:0;
+      background-image: var(--logo-url);
+      background-repeat: repeat;
+      background-size: 130px 130px;
       background-position: center;
-      backdrop-filter: blur(6px);
-      color: #fff;
+      opacity: 0.12;
+      filter: blur(3px) saturate(0.9);
+      pointer-events: none;
     }
 
-    .login-box {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 15px;
-      padding: 40px;
-      text-align: center;
-      width: 300px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    /* caja de login */
+    .card {
+      position: relative; z-index:1;
+      width: 340px;
+      max-width: calc(100% - 40px);
+      background: rgba(255,255,255,0.95);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      text-align:center;
     }
 
-    .login-box img {
-      width: 100px;
-      opacity: 0.85;
-      margin-bottom: 15px;
+    .logoSmall { width: 84px; height: auto; margin: 0 auto 12px; display:block; object-fit:contain; opacity:0.95; }
+    h1 { margin:0 0 14px; font-size:20px; color:#0b5ea8; }
+    input[type="text"], input[type="password"] {
+      width:100%; box-sizing:border-box;
+      padding:10px 12px; margin:8px 0;
+      border-radius:8px; border:1px solid #d6dbe0;
+      font-size:15px;
     }
-
-    h2 {
-      font-weight: 600;
-      margin-bottom: 20px;
+    .btn {
+      width:100%; padding:10px 12px; margin-top:12px;
+      background:#0078d4; color:white; border:0; border-radius:8px;
+      font-weight:600; cursor:pointer;
     }
+    .btn:hover{ background:#005fa3; }
+    .error { color:#b00020; margin-top:10px; font-size:14px; min-height:18px; }
 
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      text-align: center;
-    }
+    .muted { font-size:12px; color:#666; margin-top:10px; }
 
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #0078d7;
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      background: #005fa3;
-    }
-
-    .footer {
-      font-size: 12px;
-      margin-top: 15px;
-      opacity: 0.8;
+    @media (max-width:420px){
+      .card{ padding:18px; border-radius:10px; }
+      h1{ font-size:18px; }
     }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <img id="logo" alt="Logo SST">
-    <h2>Acceso Capacitación SST</h2>
-    <input type="text" id="dni" placeholder="Ingrese su DNI">
-    <button onclick="login()">Ingresar</button>
-    <p class="footer">© Grupo IPS Perú</p>
+  <div class="card" role="main" aria-labelledby="title">
+    <img id="logoImg" class="logoSmall" alt="Logo empresa">
+    <h1 id="title">Acceso Capacitación SST</h1>
+
+    <input id="dni" type="text" placeholder="DNI o CE" inputmode="numeric" />
+    <input id="password" type="password" placeholder="Contraseña" />
+    <button class="btn" id="btnLogin">Ingresar</button>
+
+    <div id="err" class="error" aria-live="polite"></div>
+    <div class="muted">Si olvidaste tu contraseña contacta al administrador.</div>
   </div>
 
   <script>
-    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+  // ---------- CONFIG ----------
+  const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
+  const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-    async function obtenerCSV(url) {
-      const resp = await fetch(url);
-      const texto = await resp.text();
-      return texto.trim().split("\n").map(r => r.split(","));
+  // ---------- CSV parser (maneja comillas, comas internas) ----------
+  function parseCSV(text){
+    const rows = [];
+    let cur = "", row = [], inQuotes = false;
+    for (let i=0;i<text.length;i++){
+      const ch = text[i];
+      const next = text[i+1];
+      if (ch === '"') {
+        if (inQuotes && next === '"') { cur += '"'; i++; continue; } // escaped quote
+        inQuotes = !inQuotes;
+        continue;
+      }
+      if (!inQuotes && (ch === ',')) {
+        row.push(cur); cur = ""; continue;
+      }
+      if (!inQuotes && (ch === '\n' || ch === '\r')) {
+        // handle CRLF or LF
+        // if CRLF skip next
+        if (ch === '\r' && text[i+1] === '\n'){ i++; }
+        row.push(cur);
+        rows.push(row);
+        row = []; cur = "";
+        continue;
+      }
+      cur += ch;
     }
+    // push last
+    if (cur !== "" || row.length) row.push(cur);
+    if (row.length) rows.push(row);
+    // trim spaces
+    return rows.map(r => r.map(c => (c || "").trim()));
+  }
 
-    async function cargarLogo() {
-      const hoja2 = await obtenerCSV(URL_HOJA2);
-      const ultimaCol = hoja2[0].length - 2; // Logo está antes de "TEMAS"
-      document.getElementById("logo").src = hoja2[1][ultimaCol].trim();
+  // ---------- helpers ----------
+  function driveToPreview(url){
+    if (typeof url !== "string") return url || "";
+    // if it's already a preview or other origin, try to transform common drive formats
+    // Accept: /file/d/ID/view or uc?export=view&id=ID or drive.google.com/open?id=ID
+    const m = url.match(/(?:\/d\/|id=)([-\w]{20,})/);
+    if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+    return url;
+  }
+
+  async function fetchCSV(url){
+    const res = await fetch(url);
+    const text = await res.text();
+    return parseCSV(text);
+  }
+
+  // ---------- load logo for background + small logo image ----------
+  async function applyLogoFromSheet(){
+    try {
+      const hoja2 = await fetchCSV(URL_HOJA2);
+      if (!hoja2 || hoja2.length < 2) return;
+      const headers = hoja2[0];
+      // find index of LINK LOGO and TEMAS robustly
+      const idxLogo = headers.map(h => (h||"").trim().toUpperCase()).indexOf("LINK LOGO");
+      // fallback: last-1
+      const raw = hoja2[1];
+      let logoLink = "";
+      if (idxLogo !== -1) logoLink = raw[idxLogo] || raw[raw.length-2] || "";
+      else logoLink = raw[raw.length-2] || raw[raw.length-1] || "";
+
+      logoLink = (logoLink || "").trim();
+      if (logoLink) {
+        // set small logo image
+        const img = document.getElementById("logoImg");
+        img.src = driveToPreview(logoLink) || logoLink;
+        // set background var for repeated mosaic (use direct url)
+        document.documentElement.style.setProperty('--logo-url', `url('${logoLink}')`);
+      }
+    } catch(e){
+      console.warn("No se pudo cargar logo desde hoja 2:", e);
     }
+  }
 
-    async function login() {
-      const dni = document.getElementById("dni").value.trim();
-      if (!dni) return alert("Ingrese su DNI");
-      sessionStorage.setItem("user", JSON.stringify({ dni }));
+  // ---------- login ----------
+  document.getElementById("btnLogin").addEventListener("click", onLogin);
+  document.getElementById("password").addEventListener("keydown", e => { if (e.key === "Enter") onLogin(); });
+  document.getElementById("dni").addEventListener("keydown", e => { if (e.key === "Enter") onLogin(); });
+
+  async function onLogin(){
+    const err = document.getElementById("err");
+    err.textContent = "";
+    const dni = (document.getElementById("dni").value || "").trim();
+    const pass = (document.getElementById("password").value || "").trim();
+
+    if (!dni || !pass) { err.textContent = "Por favor completa DNI y contraseña."; return; }
+
+    try {
+      const rows = await fetchCSV(URL_HOJA1);
+      const headers = rows[0].map(h=> (h||"").toUpperCase());
+      // find index columns robustly
+      const idxDNI = headers.findIndex(h => h.includes("DNI"));
+      const idxPass = headers.findIndex(h => h.includes("CONTRASEÑA") || h.includes("CONTRASEÑA"));
+      const idxNombre = headers.findIndex(h => h.includes("NOMBRE"));
+
+      if (idxDNI === -1 || idxPass === -1) { err.textContent = "Formato de hoja 1 inválido."; return; }
+
+      // search user
+      const userRow = rows.find((r,i) => i>0 && (r[idxDNI]||"").trim() === dni && (r[idxPass]||"").trim() === pass);
+      if (!userRow) { err.textContent = "DNI o contraseña incorrectos."; return; }
+
+      const nombre = (userRow[idxNombre] || "").trim();
+      sessionStorage.setItem("user", JSON.stringify({ dni, nombre }));
+      // redirect to capacitacion
       window.location.href = "capacitacion.html";
+    } catch(errFetch){
+      console.error(errFetch);
+      err.textContent = "Error al conectar con las hojas. Revisa conexión.";
     }
+  }
 
-    cargarLogo();
+  // apply logo asap
+  applyLogoFromSheet();
   </script>
 </body>
 </html>
