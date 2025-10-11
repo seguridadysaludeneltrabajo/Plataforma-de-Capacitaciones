@@ -3,122 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingreso - Plataforma SST</title>
+  <title>Ingreso - Plataforma de Capacitación</title>
   <style>
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: #f4f6f9;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      overflow: hidden;
-      background-size: 120px 120px;
+      color: #333;
+      margin: 0;
+      background-size: 150px 150px;
+      background-repeat: repeat;
+      background-position: center;
     }
-
     .login-box {
-      background: rgba(255, 255, 255, 0.92);
-      padding: 25px;
-      border-radius: 10px;
+      background: rgba(255,255,255,0.95);
+      padding: 30px;
+      border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      text-align: center;
       width: 320px;
+      text-align: center;
     }
-
-    h2 { color: #0078d7; margin-bottom: 20px; }
+    h2 { color: #0078d4; margin-bottom: 20px; }
     input {
-      width: 100%;
+      width: 90%;
       padding: 10px;
       margin: 8px 0;
+      border-radius: 6px;
       border: 1px solid #ccc;
-      border-radius: 5px;
       font-size: 14px;
     }
-
     button {
-      background: #0078d7;
+      width: 100%;
+      padding: 10px;
+      background: #0078d4;
       color: white;
       border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
+      border-radius: 6px;
       cursor: pointer;
-      width: 100%;
-      font-size: 15px;
+      font-size: 16px;
+      margin-top: 10px;
     }
     button:hover { background: #005fa3; }
-
-    .error { color: red; margin-top: 10px; }
+    .error { color: red; font-size: 13px; margin-top: 10px; }
   </style>
 </head>
 <body>
   <div class="login-box">
-    <h2>Ingreso a Plataforma SST</h2>
-    <input type="text" id="dni" placeholder="DNI o CE" />
-    <input type="password" id="password" placeholder="Contraseña" />
+    <h2>Ingreso a Capacitación</h2>
+    <input type="text" id="dni" placeholder="DNI o CE">
+    <input type="password" id="password" placeholder="Contraseña">
     <button onclick="login()">Ingresar</button>
-    <p id="error" class="error"></p>
+    <div class="error" id="error"></div>
   </div>
 
   <script>
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-    async function obtenerCSV(url) {
-      const resp = await fetch(url);
-      const texto = await resp.text();
-      return texto.trim().split("\n").map(r => r.split(","));
+    async function fetchCSV(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      const rows = text.trim().split("\n").map(r => r.split(","));
+      const headers = rows[0];
+      const data = rows.slice(1).map(r => {
+        let obj = {};
+        headers.forEach((h, i) => obj[h.trim()] = r[i] ? r[i].trim() : "");
+        return obj;
+      });
+      return data;
     }
 
-    async function cargarLogoFondo() {
+    async function setBackgroundLogo() {
       try {
-        const hoja2 = await obtenerCSV(URL_HOJA2);
-        const headers = hoja2[0];
-        const logoIndex = headers.findIndex(h => h.trim().toUpperCase() === "LINK LOGO");
-        const filaLogo = hoja2[1]?.[logoIndex] || "";
-
-        if (filaLogo) {
-          document.body.style.backgroundImage = `
-            repeating-conic-gradient(#ffffff 0% 25%, #f4f6f9 0% 50%) 50% / 120px 120px,
-            url('${filaLogo}')
-          `;
-          document.body.style.backgroundRepeat = "repeat";
-          document.body.style.backgroundSize = "150px 150px, 100px auto";
-          document.body.style.backgroundPosition = "center";
-          document.body.style.backgroundBlendMode = "multiply";
+        const links = await fetchCSV(URL_HOJA2);
+        const logo = links[0]["LINK LOGO"];
+        if (logo) {
+          document.body.style.backgroundImage = `url('${logo}')`;
+        } else {
+          document.body.style.background = "#0078d4";
         }
       } catch (e) {
         console.error("Error cargando logo:", e);
+        document.body.style.background = "#0078d4";
       }
     }
 
     async function login() {
       const dni = document.getElementById("dni").value.trim();
       const pass = document.getElementById("password").value.trim();
-      const error = document.getElementById("error");
+      const errorBox = document.getElementById("error");
+      errorBox.textContent = "";
 
-      const hoja = await obtenerCSV(URL_HOJA1);
-      const headers = hoja[0];
-      const dniIndex = headers.findIndex(h => h.toUpperCase().includes("DNI"));
-      const passIndex = headers.findIndex(h => h.toUpperCase().includes("CONTRASEÑA"));
-      const nombreIndex = headers.findIndex(h => h.toUpperCase().includes("NOMBRE"));
-
-      const usuario = hoja.find(f => f[dniIndex] === dni && f[passIndex] === pass);
-
-      if (!usuario) {
-        error.textContent = "DNI o contraseña incorrectos.";
+      if (!dni || !pass) {
+        errorBox.textContent = "Por favor, completa todos los campos.";
         return;
       }
 
-      sessionStorage.setItem("user", JSON.stringify({
-        dni: usuario[dniIndex],
-        nombre: usuario[nombreIndex]
-      }));
+      try {
+        const usuarios = await fetchCSV(URL_HOJA1);
+        const user = usuarios.find(u => u["DNI/CE"] === dni && u["CONTRASEÑA"] === pass);
 
-      window.location.href = "capacitacion.html";
+        if (!user) {
+          errorBox.textContent = "DNI o contraseña incorrectos.";
+          return;
+        }
+
+        const links = await fetchCSV(URL_HOJA2);
+        const fila = links[0];
+        user.links = {
+          induccion: { video: fila["LINK VIDEO DE INDUCCION SST"], form: fila["LINK EVALUACION"] },
+          primerosAuxilios: { video: fila["LINK VIDEO DE PRIMEROS AUXILIOS"], form: fila["LINK EVALUACION_1"] || fila["LINK EVALUACION"] },
+          ergonomia: { video: fila["LINK VIDEO DE ERGONOMIA EN EL TRABAJO"], form: fila["LINK EVALUACION_2"] || fila["LINK EVALUACION"] },
+          epp: { video: fila["LINK VIDEO DE EPP"], form: fila["LINK EVALUACION_3"] || fila["LINK EVALUACION"] },
+          logo: fila["LINK LOGO"]
+        };
+
+        sessionStorage.setItem("user", JSON.stringify({
+          dni,
+          nombre: user["NOMBRE COMPLETO"] || "",
+          links: user.links
+        }));
+
+        window.location.href = "capacitacion.html";
+      } catch (err) {
+        console.error(err);
+        errorBox.textContent = "Error al conectar con los datos.";
+      }
     }
 
-    cargarLogoFondo();
+    setBackgroundLogo();
   </script>
 </body>
 </html>
