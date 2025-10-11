@@ -5,49 +5,110 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capacitación SST</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
-    header {
-      background: #0078d7; color: white;
-      padding: 10px 20px; display: flex;
-      justify-content: space-between; align-items: center;
-      flex-wrap: wrap;
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
     }
-    .header-left { display: flex; align-items: center; gap: 10px; }
-    .header-left img { height: 40px; }
-    .header-left h2 { margin: 0; font-size: 18px; }
+
+    header {
+      background: #0078d7;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-left img {
+      height: 40px;
+    }
+
+    .header-left h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
     button {
       background-color: #ff4d4d;
-      color: white; border: none;
+      color: white;
+      border: none;
       padding: 8px 15px;
       border-radius: 6px;
       cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
     }
-    button:hover { background-color: #cc0000; }
 
+    button:hover {
+      background-color: #cc0000;
+    }
+
+    /* 🔹 Contenedor de módulos 2x2 */
     main {
       padding: 20px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 20px;
+      justify-items: center;
+      align-items: start;
+    }
+
+    /* 🔹 En pantallas pequeñas (celulares) → 1 por fila */
+    @media (max-width: 800px) {
+      main {
+        grid-template-columns: 1fr;
+      }
     }
 
     .modulo {
       background: white;
       border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      width: 100%;
+      max-width: 600px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .modulo:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
     }
 
     .modulo h3 {
       margin: 0;
       padding: 10px;
       background: #e9ecef;
+      color: #0078d7;
+      font-size: 16px;
+      text-align: center;
     }
 
-    iframe.videoFrame { border: none; width: 100%; aspect-ratio: 16/9; }
-    iframe.formFrame { border: none; width: 100%; height: 420px; display: none; }
+    iframe.videoFrame {
+      border: none;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+    }
+
+    iframe.formFrame {
+      border: none;
+      width: 100%;
+      height: 420px;
+      display: none;
+    }
 
     .info {
       padding: 10px;
@@ -55,8 +116,16 @@
       background: #fafafa;
       border-top: 1px solid #eee;
     }
-    .aprobado { color: green; font-weight: bold; }
-    .vencido { color: red; font-weight: bold; }
+
+    .aprobado {
+      color: green;
+      font-weight: bold;
+    }
+
+    .vencido {
+      color: red;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -84,15 +153,20 @@
     async function cargarLogo() {
       const hoja2 = await obtenerCSV(URL_HOJA2);
       const ultimaCol = hoja2[0].length - 1;
-      document.getElementById("logo").src = hoja2[1][ultimaCol].trim();
+      const logoURL = hoja2[1][ultimaCol]?.trim();
+      if (logoURL) {
+        document.getElementById("logo").src = logoURL;
+      }
     }
 
     function transformarVideo(link) {
       return link?.includes("/view") ? link.replace("/view", "/preview") : link;
     }
+
     function transformarForm(link) {
       return link?.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
     }
+
     function calcularVencimiento(fechaInicio) {
       if (!fechaInicio) return "";
       const [d, m, y] = fechaInicio.split("/");
@@ -100,6 +174,7 @@
       fecha.setFullYear(fecha.getFullYear() + 1);
       return fecha.toLocaleDateString("es-PE");
     }
+
     function estaVencido(fechaInicio) {
       if (!fechaInicio) return true;
       const [d, m, y] = fechaInicio.split("/");
@@ -115,9 +190,7 @@
       const headers1 = hoja1[0];
       const filaUsuario = hoja1.find(r => r[1] === user.dni);
       const filaLinks = hoja2[1];
-
       const cont = document.getElementById("contenedorModulos");
-      cont.innerHTML = "";
 
       if (!filaUsuario) {
         cont.innerHTML = "<p>No se encontró tu registro.</p>";
@@ -132,6 +205,7 @@
       };
 
       const modulos = Object.keys(columnas);
+      cont.innerHTML = "";
 
       for (let i = 0; i < modulos.length; i++) {
         const nombre = modulos[i];
@@ -141,9 +215,8 @@
         const fechaInicio = filaUsuario[idxVideo + 2] || "";
         const vencimiento = calcularVencimiento(fechaInicio);
         const vencido = estaVencido(fechaInicio);
-
         const videoSrc = transformarVideo(filaLinks[i * 2]);
-        const formSrc  = transformarForm(filaLinks[i * 2 + 1]);
+        const formSrc = transformarForm(filaLinks[i * 2 + 1]);
 
         let estadoHTML = "";
         if (nota && parseFloat(nota) >= 12 && !vencido)
@@ -157,7 +230,7 @@
 
         cont.insertAdjacentHTML("beforeend", `
           <div class="modulo">
-            <h3>Video de ${base.replace("VIDEO DE ", "")}</h3>
+            <h3>${base.replace("VIDEO DE ", "")}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
             <div class="info">
               ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
