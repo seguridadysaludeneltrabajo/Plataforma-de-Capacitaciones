@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Capacitación SST</title>
+  <title>Plataforma de Capacitación SST</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f9; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; }
     header {
       background: #0078d7; color: white;
       padding: 10px 20px; display: flex;
@@ -13,52 +13,66 @@
       flex-wrap: wrap;
     }
     .header-left { display: flex; align-items: center; gap: 10px; }
-    .header-left img { height: 40px; }
+    .header-left img { height: 45px; }
     .header-left h2 { margin: 0; font-size: 18px; }
-    .header-right { text-align: right; }
+
     button {
-      background-color: #ff4d4d; color: white; border: none;
-      padding: 8px 15px; border-radius: 6px; cursor: pointer;
+      background-color: #ff4d4d;
+      color: white; border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
     }
     button:hover { background-color: #cc0000; }
 
     main {
       padding: 20px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
       gap: 20px;
     }
 
     .modulo {
-      background: white; border-radius: 10px;
+      background: white;
+      border-radius: 10px;
       box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-      overflow: hidden; display: flex; flex-direction: column;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
+
     .modulo h3 {
-      margin: 0; padding: 10px; background: #e9ecef;
+      margin: 0;
+      padding: 12px;
+      background: #e9ecef;
+      font-size: 16px;
     }
 
     iframe.videoFrame { border: none; width: 100%; aspect-ratio: 16/9; }
     iframe.formFrame { border: none; width: 100%; height: 420px; display: none; }
 
     .info {
-      padding: 10px; font-size: 14px;
-      background: #fafafa; border-top: 1px solid #eee;
+      padding: 10px;
+      font-size: 14px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
     }
+
     .aprobado { color: green; font-weight: bold; }
     .vencido { color: red; font-weight: bold; }
+
+    @media (max-width: 600px) {
+      main { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="header-left">
       <img id="logo" alt="Logo">
-      <h2>Plataforma de Capacitación SST</h2>
+      <h2 id="bienvenida"></h2>
     </div>
-    <div class="header-right">
-      <p id="userName" style="margin:0;font-size:14px;"></p>
-      <button onclick="logout()">Cerrar sesión</button>
-    </div>
+    <button onclick="logout()">Cerrar sesión</button>
   </header>
 
   <main id="contenedorModulos"></main>
@@ -68,30 +82,24 @@
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
     const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
-    document.getElementById("userName").textContent = user?.nombre || "";
-
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
       return texto.trim().split("\n").map(r => r.split(","));
     }
 
-    async function cargarLogo() {
+    async function cargarLogoYNombre() {
       const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers = hoja2[0];
-      const idxLogo = headers.findIndex(h => h.trim().toUpperCase() === "LINK LOGO");
-      if (idxLogo !== -1) {
-        document.getElementById("logo").src = hoja2[1][idxLogo].trim();
-      }
+      const ultimaColLogo = hoja2[0].length - 2;
+      document.getElementById("logo").src = hoja2[1][ultimaColLogo].trim();
+      document.getElementById("bienvenida").textContent = `Bienvenido(a): ${user.nombre || user.dni}`;
     }
 
     function transformarVideo(link) {
-      if (typeof link !== "string") return "";
-      return link.includes("/view") ? link.replace("/view", "/preview") : link;
+      return link?.includes("/view") ? link.replace("/view", "/preview") : link;
     }
     function transformarForm(link) {
-      if (typeof link !== "string") return "";
-      return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
+      return link?.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
     }
     function calcularVencimiento(fechaInicio) {
       if (!fechaInicio) return "";
@@ -115,6 +123,7 @@
       const headers1 = hoja1[0];
       const filaUsuario = hoja1.find(r => r[1] === user.dni);
       const filaLinks = hoja2[1];
+      const temas = hoja2[1][hoja2[1].length - 1].split(",").map(t => t.trim());
 
       const cont = document.getElementById("contenedorModulos");
       cont.innerHTML = "";
@@ -154,7 +163,7 @@
 
         cont.insertAdjacentHTML("beforeend", `
           <div class="modulo">
-            <h3>${base.replace("VIDEO DE ", "Video de ")}</h3>
+            <h3>${temas[i] || base.replace("VIDEO DE ", "")}</h3>
             <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
             <div class="info">
               ${fechaInicio ? `<p>📅 Fecha de inicio: ${fechaInicio}</p>` : ""}
@@ -172,7 +181,7 @@
       window.location.href = "index.html";
     }
 
-    cargarLogo();
+    cargarLogoYNombre();
     cargarModulos();
   </script>
 </body>
