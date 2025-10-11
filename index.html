@@ -3,45 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingreso - Capacitación SST</title>
+  <title>Acceso a Capacitación SST</title>
   <style>
     body {
-      margin: 0; font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #0078d7, #00aaff);
-      display: flex; justify-content: center; align-items: center;
-      height: 100vh; color: white;
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(to bottom right, rgba(0,120,215,0.6), rgba(0,200,255,0.6)), 
+                  url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80');
+      background-size: cover;
+      background-position: center;
+      backdrop-filter: blur(6px);
+      color: #fff;
     }
-    .login-container {
-      background: white; color: #333; padding: 30px;
-      border-radius: 12px; width: 320px; text-align: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      width: 300px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    h2 { margin-bottom: 20px; color: #0078d7; }
+
+    .login-box img {
+      width: 100px;
+      opacity: 0.85;
+      margin-bottom: 15px;
+    }
+
+    h2 {
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
     input {
-      width: 100%; padding: 10px; margin: 8px 0;
-      border: 1px solid #ccc; border-radius: 6px;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      text-align: center;
     }
+
     button {
-      width: 100%; padding: 10px;
-      background-color: #0078d7; color: white;
-      border: none; border-radius: 6px; cursor: pointer;
-      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: #0078d7;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
     }
-    button:hover { background-color: #005fa3; }
-    .error { color: red; margin-top: 10px; font-size: 14px; }
+
+    button:hover {
+      background: #005fa3;
+    }
+
+    .footer {
+      font-size: 12px;
+      margin-top: 15px;
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
-  <div class="login-container">
-    <h2>Ingreso Capacitación SST</h2>
-    <input type="text" id="dni" placeholder="DNI o CE">
-    <input type="password" id="password" placeholder="Contraseña">
+  <div class="login-box">
+    <img id="logo" alt="Logo SST">
+    <h2>Acceso Capacitación SST</h2>
+    <input type="text" id="dni" placeholder="Ingrese su DNI">
     <button onclick="login()">Ingresar</button>
-    <p class="error" id="error"></p>
+    <p class="footer">© Grupo IPS Perú</p>
   </div>
 
   <script>
-    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
+    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
     async function obtenerCSV(url) {
       const resp = await fetch(url);
@@ -49,37 +91,20 @@
       return texto.trim().split("\n").map(r => r.split(","));
     }
 
+    async function cargarLogo() {
+      const hoja2 = await obtenerCSV(URL_HOJA2);
+      const ultimaCol = hoja2[0].length - 2; // Logo está antes de "TEMAS"
+      document.getElementById("logo").src = hoja2[1][ultimaCol].trim();
+    }
+
     async function login() {
       const dni = document.getElementById("dni").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const error = document.getElementById("error");
-
-      const datos = await obtenerCSV(URL_HOJA1);
-      const encabezados = datos[0];
-      const fila = datos.find((r, i) => i > 0 && r[1] === dni);
-
-      if (!fila) {
-        error.textContent = "DNI o contraseña incorrectos.";
-        return;
-      }
-
-      const contraseña = fila[2]?.trim();
-      if (password !== contraseña) {
-        error.textContent = "DNI o contraseña incorrectos.";
-        return;
-      }
-
-      const user = {
-        nombre: fila[0],
-        dni: fila[1],
-        fechaIngreso: fila[3],
-        estado: fila[4]
-      };
-
-      sessionStorage.setItem("user", JSON.stringify(user));
-      sessionStorage.setItem("loggedIn", "true");
+      if (!dni) return alert("Ingrese su DNI");
+      sessionStorage.setItem("user", JSON.stringify({ dni }));
       window.location.href = "capacitacion.html";
     }
+
+    cargarLogo();
   </script>
 </body>
 </html>
