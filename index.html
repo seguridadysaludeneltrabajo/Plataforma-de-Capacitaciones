@@ -3,153 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingreso a Plataforma SST</title>
+  <title>Ingreso - Capacitación SST</title>
   <style>
     body {
-      font-family: "Segoe UI", Arial, sans-serif;
       margin: 0;
+      font-family: Arial, sans-serif;
       height: 100vh;
       display: flex;
-      align-items: center;
       justify-content: center;
-      background-size: cover;
-      background-position: center;
+      align-items: center;
+      background-color: #f4f6f9;
+      background-size: 150px 150px;
+      background-position: 0 0, 75px 75px;
       background-repeat: repeat;
-      background-color: #f0f0f0;
     }
-
-    .login-box {
-      background: rgba(255,255,255,0.92);
+    .login {
+      background: rgba(255,255,255,0.9);
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
       width: 100%;
-      max-width: 380px;
+      max-width: 360px;
       text-align: center;
     }
-
-    h2 {
-      color: #0078d7;
-      margin-bottom: 20px;
-    }
-
+    h2 { margin-bottom: 20px; color: #0078d7; }
     input {
       width: 100%;
       padding: 10px;
       margin: 8px 0;
       border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
+      border-radius: 6px;
     }
-
     button {
       width: 100%;
       padding: 10px;
       background: #0078d7;
       color: white;
-      font-size: 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
-      transition: background 0.3s ease;
+      transition: background 0.3s;
     }
-
-    button:hover {
-      background: #005fa3;
-    }
-
-    .error {
-      color: red;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        background-size: contain;
-      }
-      .login-box {
-        margin: 15px;
-        padding: 20px;
-      }
-    }
+    button:hover { background: #005fa3; }
+    #error { color: red; margin-top: 10px; font-size: 14px; }
   </style>
 </head>
 <body>
-  <div class="login-box">
+  <div class="login">
     <h2>Ingreso a Capacitación SST</h2>
-    <input type="text" id="dni" placeholder="Ingrese su DNI" maxlength="15">
-    <input type="password" id="clave" placeholder="Ingrese su Contraseña">
+    <input type="text" id="dni" placeholder="Ingrese su DNI o CE">
+    <input type="password" id="password" placeholder="Ingrese su contraseña">
     <button onclick="login()">Ingresar</button>
-    <div class="error" id="errorMsg"></div>
+    <p id="error"></p>
   </div>
 
   <script>
     const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
+    // Función para obtener CSV
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
       return texto.trim().split("\n").map(r => r.split(","));
     }
 
-    function convertirLinkDrive(link) {
+    // Transformar link de Drive a imagen directa
+    function transformarLogo(link) {
       if (!link) return "";
-      const match = link.match(/\/d\/([a-zA-Z0-9_-]+)\//);
-      return match ? `https://drive.google.com/uc?export=view&id=${match[1]}` : link;
+      const id = link.match(/\/d\/(.*?)\//)?.[1];
+      return id ? `https://drive.google.com/uc?id=${id}` : link;
     }
 
-    async function cargarFondo() {
-      try {
-        const hoja2 = await obtenerCSV(URL_HOJA2);
-        const headers = hoja2[0];
-        const colLogo = headers.indexOf("LINK LOGO");
-        if (colLogo !== -1) {
-          const logoURL = convertirLinkDrive(hoja2[1][colLogo]);
-          if (logoURL) {
-            document.body.style.backgroundImage = `repeating-linear-gradient(45deg, transparent 0 40px, rgba(0,0,0,0.05) 40px 80px), url('${logoURL}')`;
-            document.body.style.backgroundSize = "150px 150px";
-          }
-        }
-      } catch (err) {
-        console.error("Error cargando logo:", err);
-      }
-    }
-
+    // Login
     async function login() {
       const dni = document.getElementById("dni").value.trim();
-      const clave = document.getElementById("clave").value.trim();
-      const errorMsg = document.getElementById("errorMsg");
+      const password = document.getElementById("password").value.trim();
+      const errorEl = document.getElementById("error");
 
-      if (!dni || !clave) {
-        errorMsg.textContent = "Ingrese su DNI y contraseña.";
+      if (!dni || !password) {
+        errorEl.textContent = "Por favor, ingrese su DNI y contraseña.";
         return;
       }
 
       try {
-        const datos = await obtenerCSV(URL_HOJA1);
-        const headers = datos[0];
-        const idxDNI = headers.indexOf("DNI");
-        const idxClave = headers.indexOf("CONTRASEÑA");
-        const idxNombre = headers.indexOf("NOMBRE COMPLETO");
+        const hoja1 = await obtenerCSV(URL_HOJA1);
+        const hoja2 = await obtenerCSV(URL_HOJA2);
 
-        const usuario = datos.find(f => f[idxDNI] === dni && f[idxClave] === clave);
+        const headers = hoja1[0];
+        const nombreIndex = headers.indexOf("NOMBRE COMPLETO");
+        const dniIndex = headers.indexOf("DNI/CE");
+        const passIndex = headers.indexOf("CONTRASEÑA");
 
-        if (usuario) {
-          const nombre = usuario[idxNombre];
-          sessionStorage.setItem("user", JSON.stringify({ dni, nombre }));
-          window.location.href = "capacitacion.html";
-        } else {
-          errorMsg.textContent = "DNI o contraseña incorrectos.";
+        const fila = hoja1.find(r => r[dniIndex] === dni && r[passIndex] === password);
+
+        if (!fila) {
+          errorEl.textContent = "Credenciales incorrectas.";
+          return;
         }
-      } catch (err) {
-        console.error(err);
-        errorMsg.textContent = "Error al conectar con la base de datos.";
+
+        // Obtener logo desde hoja 2 (última columna)
+        const logoHeader = hoja2[0][hoja2[0].length - 1];
+        const logoLink = hoja2[1][hoja2[0].length - 1];
+        const logoURL = transformarLogo(logoLink);
+
+        // Guardar datos del usuario
+        sessionStorage.setItem("user", JSON.stringify({
+          nombre: fila[nombreIndex],
+          dni: fila[dniIndex],
+          logo: logoURL
+        }));
+
+        // Redirigir
+        window.location.href = "capacitacion.html";
+      } catch (e) {
+        console.error(e);
+        errorEl.textContent = "Error al conectar con la base de datos.";
       }
     }
 
-    cargarFondo();
+    // Fondo tipo ajedrez con logo
+    (async () => {
+      try {
+        const hoja2 = await obtenerCSV(URL_HOJA2);
+        const logoLink = hoja2[1][hoja2[0].length - 1];
+        const logoURL = transformarLogo(logoLink);
+        document.body.style.backgroundImage = `
+          url('${logoURL}'), 
+          linear-gradient(white 50%, #f4f6f9 50%)
+        `;
+        document.body.style.backgroundBlendMode = "multiply";
+      } catch (e) { console.warn("No se pudo cargar el logo de fondo."); }
+    })();
   </script>
 </body>
 </html>
