@@ -3,52 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingreso Capacitación SST</title>
+  <title>Ingreso a Capacitación SST</title>
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f9;
+      font-family: "Segoe UI", Arial, sans-serif;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-direction: column;
+      background-color: #f5f6fa;
       background-size: 200px 200px;
+      background-position: 0 0, 100px 100px;
+      background-repeat: repeat;
+      animation: fadeIn 1.2s ease-in-out;
     }
 
-    .contenedor {
-      background: rgba(255, 255, 255, 0.9);
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px 30px;
+      border-radius: 15px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
       text-align: center;
       width: 320px;
+      backdrop-filter: blur(6px);
+      transition: transform 0.3s ease;
     }
 
-    h2 { color: #0078d7; margin-bottom: 20px; }
-    input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; }
+    .login-box:hover {
+      transform: scale(1.02);
+    }
+
+    h2 {
+      color: #0078d7;
+      font-size: 22px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+
     button {
-      background: #0078d7;
+      width: 100%;
+      padding: 10px;
+      background-color: #0078d7;
       color: white;
-      padding: 10px 20px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      width: 100%;
       font-weight: bold;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
     }
-    button:hover { background: #005ea8; }
+
+    button:hover {
+      background-color: #005ea8;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 10px;
+      font-size: 12px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
-  <div class="contenedor">
+  <div class="login-box">
     <h2>Ingreso a Capacitación SST</h2>
-    <input type="text" id="dni" placeholder="Ingrese su DNI">
+    <input type="text" id="dni" placeholder="Ingrese su DNI o CE" maxlength="12" />
+    <input type="password" id="password" placeholder="Ingrese su Contraseña" />
     <button onclick="login()">Ingresar</button>
+    <div id="error" class="error"></div>
   </div>
 
+  <footer>© Plataforma SST 2025</footer>
+
   <script>
+    // URLs de tus hojas de Google Sheets
+    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
     async function obtenerCSV(url) {
@@ -57,28 +108,69 @@
       return texto.trim().split("\n").map(r => r.split(","));
     }
 
+    function convertirLinkDrive(link) {
+      if (!link) return "";
+      const match = link.match(/\/d\/([a-zA-Z0-9_-]+)\//);
+      if (match) {
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+      }
+      return link;
+    }
+
     async function aplicarFondo() {
-      const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers = hoja2[0];
-      const colLogo = headers.indexOf("LINK LOGO");
-      if (colLogo === -1) return;
+      try {
+        const hoja2 = await obtenerCSV(URL_HOJA2);
+        const headers = hoja2[0];
+        const colLogo = headers.indexOf("LINK LOGO");
+        if (colLogo === -1) return;
 
-      const filaLogo = hoja2[1][colLogo];
-      if (!filaLogo) return;
+        const filaLogo = hoja2[1][colLogo];
+        if (!filaLogo) return;
 
-      document.body.style.backgroundImage = `url('${filaLogo}'), url('${filaLogo}')`;
-      document.body.style.backgroundPosition = "0 0, 100px 100px";
-      document.body.style.backgroundRepeat = "repeat";
+        const logoURL = convertirLinkDrive(filaLogo);
+        document.body.style.backgroundImage = `url('${logoURL}'), url('${logoURL}')`;
+        document.body.style.backgroundSize = "200px 200px";
+        document.body.style.backgroundPosition = "0 0, 100px 100px";
+        document.body.style.backgroundRepeat = "repeat";
+      } catch (err) {
+        console.error("Error aplicando fondo:", err);
+      }
     }
 
     async function login() {
       const dni = document.getElementById("dni").value.trim();
-      if (!dni) {
-        alert("Por favor ingrese su DNI.");
+      const pass = document.getElementById("password").value.trim();
+      const errorBox = document.getElementById("error");
+      errorBox.textContent = "";
+
+      if (!dni || !pass) {
+        errorBox.textContent = "Por favor, complete ambos campos.";
         return;
       }
-      sessionStorage.setItem("user", JSON.stringify({ dni }));
-      window.location.href = "capacitacion.html";
+
+      try {
+        const hoja1 = await obtenerCSV(URL_HOJA1);
+        const headers = hoja1[0];
+        const colDni = headers.indexOf("DNI/CE");
+        const colPass = headers.indexOf("CONTRASEÑA");
+
+        const usuario = hoja1.find(row => row[colDni] === dni && row[colPass] === pass);
+
+        if (!usuario) {
+          errorBox.textContent = "DNI o contraseña incorrectos.";
+          return;
+        }
+
+        sessionStorage.setItem("user", JSON.stringify({
+          dni: dni,
+          nombre: usuario[headers.indexOf("NOMBRE")] || ""
+        }));
+
+        window.location.href = "capacitacion.html";
+      } catch (err) {
+        console.error("Error al verificar usuario:", err);
+        errorBox.textContent = "Error al conectar con los datos.";
+      }
     }
 
     aplicarFondo();
