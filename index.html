@@ -1,124 +1,124 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Plataforma de Capacitación SST</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingreso - Plataforma SST</title>
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      margin: 0;
-      background-size: 150px 150px;
-      background-repeat: repeat;
-      background-position: center;
-      background-color: #f9f9f9;
+      background: #f4f6f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      background-size: 120px 120px;
     }
-    header {
-      background: #0078d4;
-      color: white;
-      text-align: center;
-      padding: 15px;
-      position: relative;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 20px;
-    }
-    header img {
-      position: absolute;
-      left: 15px;
-      top: 10px;
-      height: 40px;
-    }
-    .cerrar {
-      position: absolute;
-      right: 15px;
-      top: 10px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
-      cursor: pointer;
-    }
-    .container {
-      padding: 20px;
-      max-width: 800px;
-      margin: auto;
-    }
-    .modulo {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-      padding: 15px;
-    }
-    iframe {
-      width: 100%;
-      height: 220px;
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.92);
+      padding: 25px;
       border-radius: 10px;
-      border: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 320px;
     }
-    .modulo h2 {
-      color: #0078d4;
+
+    h2 { color: #0078d7; margin-bottom: 20px; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
     }
-    a {
-      display: inline-block;
-      margin-top: 10px;
+
+    button {
+      background: #0078d7;
       color: white;
-      background: #0078d4;
-      padding: 8px 12px;
-      border-radius: 6px;
-      text-decoration: none;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 15px;
     }
-    a:hover {
-      background: #005fa3;
-    }
-    @media (max-width: 600px) {
-      iframe {
-        height: 180px;
-      }
-    }
+    button:hover { background: #005fa3; }
+
+    .error { color: red; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <header>
-    <img id="logo" alt="Logo">
-    <h1>Plataforma de Capacitación SST</h1>
-    <button class="cerrar" onclick="cerrarSesion()">Cerrar</button>
-  </header>
-
-  <div class="container" id="contenido"></div>
+  <div class="login-box">
+    <h2>Ingreso a Plataforma SST</h2>
+    <input type="text" id="dni" placeholder="DNI o CE" />
+    <input type="password" id="password" placeholder="Contraseña" />
+    <button onclick="login()">Ingresar</button>
+    <p id="error" class="error"></p>
+  </div>
 
   <script>
-    const user = JSON.parse(sessionStorage.getItem("user"));
-    if (!user) {
-      window.location.href = "index.html";
+    const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
+    const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+
+    async function obtenerCSV(url) {
+      const resp = await fetch(url);
+      const texto = await resp.text();
+      return texto.trim().split("\n").map(r => r.split(","));
     }
 
-    // Fondo con el logo
-    if (user.logo) {
-      document.body.style.backgroundImage = `url('${user.logo}')`;
+    async function cargarLogoFondo() {
+      try {
+        const hoja2 = await obtenerCSV(URL_HOJA2);
+        const headers = hoja2[0];
+        const logoIndex = headers.findIndex(h => h.trim().toUpperCase() === "LINK LOGO");
+        const filaLogo = hoja2[1]?.[logoIndex] || "";
+
+        if (filaLogo) {
+          document.body.style.backgroundImage = `
+            repeating-conic-gradient(#ffffff 0% 25%, #f4f6f9 0% 50%) 50% / 120px 120px,
+            url('${filaLogo}')
+          `;
+          document.body.style.backgroundRepeat = "repeat";
+          document.body.style.backgroundSize = "150px 150px, 100px auto";
+          document.body.style.backgroundPosition = "center";
+          document.body.style.backgroundBlendMode = "multiply";
+        }
+      } catch (e) {
+        console.error("Error cargando logo:", e);
+      }
     }
 
-    document.getElementById("logo").src = user.logo;
-    const cont = document.getElementById("contenido");
-    cont.innerHTML = `
-      <h2>Bienvenido, ${user.nombre}</h2>
-      ${Object.entries(user.links).map(([key, mod]) => `
-        <div class="modulo">
-          <h2>${key.replace(/([A-Z])/g, ' $1').toUpperCase()}</h2>
-          <iframe src="${mod.video}" allowfullscreen></iframe><br>
-          <a href="${mod.form}" target="_blank">Ir a evaluación</a>
-        </div>
-      `).join("")}
-    `;
+    async function login() {
+      const dni = document.getElementById("dni").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      const error = document.getElementById("error");
 
-    function cerrarSesion() {
-      sessionStorage.clear();
-      window.location.href = "index.html";
+      const hoja = await obtenerCSV(URL_HOJA1);
+      const headers = hoja[0];
+      const dniIndex = headers.findIndex(h => h.toUpperCase().includes("DNI"));
+      const passIndex = headers.findIndex(h => h.toUpperCase().includes("CONTRASEÑA"));
+      const nombreIndex = headers.findIndex(h => h.toUpperCase().includes("NOMBRE"));
+
+      const usuario = hoja.find(f => f[dniIndex] === dni && f[passIndex] === pass);
+
+      if (!usuario) {
+        error.textContent = "DNI o contraseña incorrectos.";
+        return;
+      }
+
+      sessionStorage.setItem("user", JSON.stringify({
+        dni: usuario[dniIndex],
+        nombre: usuario[nombreIndex]
+      }));
+
+      window.location.href = "capacitacion.html";
     }
+
+    cargarLogoFondo();
   </script>
 </body>
 </html>
-
