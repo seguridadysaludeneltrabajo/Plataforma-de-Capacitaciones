@@ -50,7 +50,7 @@
     main {
       padding: 20px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 20px;
       box-sizing: border-box;
     }
@@ -102,7 +102,7 @@
       font-weight: bold;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 900px) {
       main {
         grid-template-columns: 1fr;
       }
@@ -184,8 +184,7 @@
       const headers1 = hoja1[0];
       const filaUsuario = hoja1.find((r) => r[1] === user.dni);
       const filaLinks = hoja2[1];
-      const temasIdx = hoja2[0].indexOf("TEMAS");
-      const temas = filaLinks[temasIdx]?.split(";") || [];
+      const headers2 = hoja2[0];
 
       const cont = document.getElementById("contenedorModulos");
       cont.innerHTML = "";
@@ -195,14 +194,10 @@
         return;
       }
 
-      const columnas = [
-        "VIDEO DE INDUCCION SST",
-        "VIDEO DE PRIMEROS AUXILIOS",
-        "VIDEO DE ERGONOMIA EN EL TRABAJO",
-        "VIDEO DE EPP",
-      ];
+      // Buscar todas las columnas que contienen "VIDEO"
+      const columnasVideo = headers1.filter(h => h.includes("VIDEO"));
 
-      columnas.forEach((col, i) => {
+      columnasVideo.forEach((col, i) => {
         const idxVideo = headers1.indexOf(col);
         const nota = parseFloat(filaUsuario[idxVideo + 1] || "0");
         const fechaInicio = filaUsuario[idxVideo + 2] || "";
@@ -211,7 +206,7 @@
 
         const videoSrc = transformarVideo(filaLinks[i * 2]);
         const formSrc = transformarForm(filaLinks[i * 2 + 1]);
-        const tema = temas[i] || col.replace("VIDEO DE ", "");
+        const tema = col.replace("VIDEO DE ", "").trim();
 
         let estadoHTML = "";
         if (nota >= 12 && !vencido)
