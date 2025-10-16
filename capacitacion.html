@@ -47,6 +47,7 @@
       flex-wrap: wrap;
       position: relative;
       z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     .header-left {
       display: flex;
@@ -62,7 +63,8 @@
     .header-left h2 {
       margin: 0;
       font-size: 18px;
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.3px;
     }
     button {
       background-color: #ff4d4d;
@@ -71,37 +73,46 @@
       padding: 8px 15px;
       border-radius: 6px;
       cursor: pointer;
-      position: relative;
-      z-index: 2;
+      font-weight: 600;
+      transition: background 0.2s ease-in-out;
     }
     button:hover { background-color: #cc0000; }
 
     main {
-      padding: 20px;
+      padding: 30px 5vw;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 25px;
       position: relative;
       z-index: 2;
+      justify-items: center;
     }
 
     .modulo {
       background: rgba(255,255,255,0.95);
-      border-radius: 12px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      width: 100%;
+      max-width: 550px;
+    }
+    .modulo:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
     .modulo h3 {
       margin: 0;
-      padding: 12px;
+      padding: 14px 16px;
       background: #e9f1fb;
       color: #004a99;
       font-size: 16px;
       font-weight: 600;
       line-height: 1.4;
       word-break: break-word;
+      border-bottom: 1px solid #d0e2fb;
     }
     iframe.videoFrame {
       width: 100%;
@@ -115,16 +126,26 @@
       display: none;
     }
     .info {
-      padding: 10px 15px;
+      padding: 12px 18px;
       font-size: 14px;
       background: #fafafa;
       border-top: 1px solid #eee;
+      line-height: 1.5;
     }
-    .aprobado { color: green; font-weight: bold; }
-    .vencido { color: red; font-weight: bold; }
+    .aprobado { color: #007a00; font-weight: bold; }
+    .vencido { color: #d40000; font-weight: bold; }
 
-    @media (max-width: 900px) {
-      .header-left h2 { font-size: 16px; }
+    @media (max-width: 800px) {
+      main {
+        grid-template-columns: 1fr;
+        padding: 20px;
+      }
+      .modulo {
+        max-width: 100%;
+      }
+      .header-left h2 {
+        font-size: 16px;
+      }
     }
   </style>
 </head>
@@ -147,26 +168,18 @@
 
     const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
-    // --- CSV parser (igual que index) ---
     function parseCSV(text){
       const rows = [];
       let cur = "", row = [], inQuotes = false;
       for (let i=0;i<text.length;i++){
-        const ch = text[i];
-        const next = text[i+1];
-        if (ch === '"') {
-          if (inQuotes && next === '"') { cur += '"'; i++; continue; }
-          inQuotes = !inQuotes; continue;
-        }
+        const ch = text[i], next = text[i+1];
+        if (ch === '"'){ if (inQuotes && next === '"'){ cur+='"'; i++; continue; } inQuotes=!inQuotes; continue; }
         if (!inQuotes && ch === ','){ row.push(cur); cur=""; continue; }
-        if (!inQuotes && (ch === '\n' || ch === '\r')){
-          if (ch === '\r' && text[i+1] === '\n') i++;
-          row.push(cur); rows.push(row); row=[]; cur=""; continue;
-        }
-        cur += ch;
+        if (!inQuotes && (ch === '\n' || ch === '\r')){ if(ch==='\r'&&text[i+1]==='\n')i++; row.push(cur); rows.push(row); row=[]; cur=""; continue; }
+        cur+=ch;
       }
-      if (cur !== "" || row.length){ row.push(cur); rows.push(row); }
-      return rows.map(r => r.map(c => (c||"").trim()));
+      if (cur!==""||row.length){ row.push(cur); rows.push(row); }
+      return rows.map(r=>r.map(c=>(c||"").trim()));
     }
 
     async function obtenerCSV(url){
@@ -182,7 +195,6 @@
       return url;
     }
 
-    // --- Aplica logo igual que login ---
     async function aplicarLogo(){
       try {
         const hoja2 = await obtenerCSV(URL_HOJA2);
@@ -195,11 +207,8 @@
           img.src = driveToPreview(logoLink);
           document.documentElement.style.setProperty("--logo-url", `url('${logoLink}')`);
         }
-        const nombre = user.nombre || "Usuario";
-        document.getElementById("bienvenida").textContent = `Bienvenido(a): ${nombre}`;
-      } catch(e){
-        console.warn("Error al aplicar logo:", e);
-      }
+        document.getElementById("bienvenida").textContent = `Bienvenido(a): ${user.nombre || "Usuario"}`;
+      } catch(e){ console.warn("Error al aplicar logo:", e); }
     }
 
     function transformarVideo(link){
@@ -208,9 +217,7 @@
     }
     function transformarForm(link){
       if (!link) return "";
-      if (link.includes("viewform"))
-        return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
-      return link;
+      return link.includes("viewform") ? (link.includes("?") ? link + "&embedded=true" : link + "?embedded=true") : link;
     }
 
     function calcularVencimiento(fechaInicio){
@@ -234,7 +241,6 @@
       const headers1 = hoja1[0].map(h => h.toUpperCase());
       const filaUsuario = hoja1.find(r => r[1] === user.dni);
       const filaLinks = hoja2[1];
-
       const cont = document.getElementById("contenedorModulos");
       cont.innerHTML = "";
 
@@ -254,7 +260,6 @@
         const vencido = estaVencido(fechaInicio);
         const videoSrc = transformarVideo(filaLinks[i*2]);
         const formSrc = transformarForm(filaLinks[i*2+1]);
-
         const titulo = col.nombre.replace(/VIDEO\s*(DE)?\s*/i,"").trim();
 
         let estado = "";
