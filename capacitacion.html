@@ -106,7 +106,6 @@
   <main id="contenedorModulos"></main>
 
   <script>
-    // URLs de las hojas
     const URL_HOJA1 =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
     const URL_HOJA2 =
@@ -114,7 +113,6 @@
 
     const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
-    // --- FUNCIONES AUXILIARES ---
     async function obtenerCSV(url) {
       const resp = await fetch(url);
       const texto = await resp.text();
@@ -124,7 +122,6 @@
         .map((r) => r.split(",").map((x) => x.trim()));
     }
 
-    // Convierte enlaces de Google Drive a vista directa
     function driveToPreview(url) {
       if (!url) return "";
       const m = url.match(/(?:\/d\/|id=)([-\w]{20,})/);
@@ -132,7 +129,6 @@
       return url;
     }
 
-    // Cargar logo y nombre del usuario
     async function cargarLogoYNombre() {
       try {
         const hoja2 = await obtenerCSV(URL_HOJA2);
@@ -141,33 +137,26 @@
 
         const idxLogo = headers.indexOf("LINK LOGO");
         let logoUrl = idxLogo !== -1 ? fila[idxLogo] : "";
-
-        if (logoUrl) {
-          const logoImg = document.getElementById("logo");
-          logoImg.src = driveToPreview(logoUrl);
-        }
+        if (logoUrl) document.getElementById("logo").src = driveToPreview(logoUrl);
 
         const nombre = user.nombre || "Usuario";
         document.getElementById("bienvenida").textContent = `Bienvenido(a): ${nombre}`;
       } catch (e) {
-        console.warn("Error al cargar logo y nombre:", e);
+        console.warn("Error al cargar logo:", e);
       }
     }
 
-    // Funciones de transformación de links
     function transformarVideo(link) {
-      if (!link) return "";
+      if (typeof link !== "string") return "";
       return link.includes("/view") ? link.replace("/view", "/preview") : link;
     }
     function transformarForm(link) {
-      if (!link) return "";
-      if (link.includes("viewform")) {
+      if (typeof link !== "string") return "";
+      if (link.includes("viewform"))
         return link.includes("?") ? link + "&embedded=true" : link + "?embedded=true";
-      }
       return link;
     }
 
-    // Fechas y estado
     function calcularVencimiento(fechaInicio) {
       if (!fechaInicio) return "";
       const [d, m, y] = fechaInicio.split("/");
@@ -184,11 +173,10 @@
       return hoy > fecha;
     }
 
-    // Cargar módulos
     async function cargarModulos() {
       const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers1 = hoja1[0];
+      const headers1 = hoja1[0].map(h => h.toUpperCase());
       const filaUsuario = hoja1.find((r) => r[1] === user.dni);
       const filaLinks = hoja2[1];
 
@@ -200,10 +188,13 @@
         return;
       }
 
-      const columnasVideo = headers1.filter((h) => h.toUpperCase().includes("VIDEO DE "));
+      // Buscar todas las columnas de VIDEO dinámicamente
+      const columnasVideo = headers1
+        .map((h, i) => ({ nombre: h, index: i }))
+        .filter((obj) => obj.nombre.includes("VIDEO"));
 
       columnasVideo.forEach((col, i) => {
-        const idxVideo = headers1.indexOf(col);
+        const idxVideo = col.index;
         const nota = parseFloat(filaUsuario[idxVideo + 1] || "0");
         const fechaInicio = filaUsuario[idxVideo + 2] || "";
         const vencimiento = calcularVencimiento(fechaInicio);
@@ -211,15 +202,18 @@
 
         const videoSrc = transformarVideo(filaLinks[i * 2]);
         const formSrc = transformarForm(filaLinks[i * 2 + 1]);
-
-        const tituloModulo = col.replace(/VIDEO DE /i, "").trim();
+        const tituloModulo = col.nombre
+          .replace(/VIDEO DE\s*/i, "")
+          .replace(/VIDEO\s*/i, "")
+          .trim();
 
         let estadoHTML = "";
         if (nota >= 12 && !vencido)
           estadoHTML = `<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${vencimiento}.</p>`;
         else if (vencido && fechaInicio)
           estadoHTML = `<p class="vencido">⚠️ Vencido el ${vencimiento}. Debe volver a rendir la evaluación.</p>`;
-        else estadoHTML = `<p>🕓 Pendiente de evaluación.</p>`;
+        else
+          estadoHTML = `<p>🕓 Pendiente de evaluación.</p>`;
 
         const mostrarForm = nota < 12 || vencido;
 
@@ -246,7 +240,6 @@
       window.location.href = "index.html";
     }
 
-    // Ejecutar carga
     cargarLogoYNombre();
     cargarModulos();
   </script>
