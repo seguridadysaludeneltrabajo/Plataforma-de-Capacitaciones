@@ -98,6 +98,7 @@
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       width: 100%;
       max-width: 550px;
+      position: relative;
     }
     .modulo:hover {
       transform: translateY(-3px);
@@ -135,17 +136,43 @@
     .aprobado { color: #007a00; font-weight: bold; }
     .vencido { color: #d40000; font-weight: bold; }
 
+    /* Responsive */
     @media (max-width: 800px) {
-      main {
-        grid-template-columns: 1fr;
-        padding: 20px;
-      }
-      .modulo {
-        max-width: 100%;
-      }
-      .header-left h2 {
-        font-size: 16px;
-      }
+      main { grid-template-columns: 1fr; padding: 20px; }
+      .modulo { max-width: 100%; }
+      .header-left h2 { font-size: 16px; }
+    }
+
+    /* Mensaje flotante */
+    .rotate-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,120,215,0.9);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease-in-out;
+      z-index: 5;
+    }
+    .rotate-message.show {
+      opacity: 1;
+    }
+
+    .refresh-btn {
+      background-color: #0078d7;
+      margin: 10px auto 15px;
+      width: 90%;
+      display: block;
+    }
+    .refresh-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -275,16 +302,51 @@
         cont.insertAdjacentHTML("beforeend",`
           <div class="modulo">
             <h3>${titulo}</h3>
-            <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+            <div style="position:relative;">
+              <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+              <div class="rotate-message">📺 Gira tu celular para ver mejor el video</div>
+            </div>
             <div class="info">
               ${fechaInicio?`<p>📅 Fecha de inicio: ${fechaInicio}</p>`:""}
               ${venc?`<p>📆 Fecha de vencimiento: ${venc}</p>`:""}
               ${estado}
             </div>
-            ${mostrarForm?`<iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>`:""}
+            ${mostrarForm?`
+              <iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>
+              <button class="refresh-btn" onclick="refrescarModulo(this)">🔄 Refrescar módulo</button>
+            `:""}
           </div>
         `);
       });
+
+      agregarEventosVideo();
+    }
+
+    function agregarEventosVideo(){
+      document.querySelectorAll(".modulo iframe.videoFrame").forEach(frame=>{
+        const modulo = frame.closest(".modulo");
+        const mensaje = modulo.querySelector(".rotate-message");
+
+        frame.addEventListener("click", ()=>{
+          mensaje.classList.add("show");
+          setTimeout(()=>mensaje.classList.remove("show"), 4000);
+        });
+
+        frame.addEventListener("load", ()=>{
+          frame.contentWindow?.addEventListener("fullscreenchange", ()=>{
+            mensaje.classList.add("show");
+            setTimeout(()=>mensaje.classList.remove("show"), 4000);
+          });
+        });
+      });
+    }
+
+    async function refrescarModulo(btn){
+      btn.disabled = true;
+      btn.textContent = "Actualizando...";
+      await cargarModulos();
+      btn.textContent = "🔄 Refrescar módulo";
+      btn.disabled = false;
     }
 
     function logout(){
