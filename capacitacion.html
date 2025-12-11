@@ -1,361 +1,203 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Capacitación de Seguridad y Salud en el Trabajo</title>
-  <style>
-    :root { --logo-url: none; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Capacitación de Seguridad y Salud en el Trabajo</title>
+<style>
+:root { --logo-url: none; }
+body { margin:0; font-family:"Segoe UI",Arial,sans-serif; background:linear-gradient(135deg,rgba(0,120,215,0.18),rgba(0,200,255,0.12)); min-height:100vh; position:relative; overflow-x:hidden; }
+body::before { content:""; position:absolute; inset:0; background-image: linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px); background-size:140px 140px; pointer-events:none; z-index:0; }
+body::after { content:""; position:absolute; inset:0; background-image: var(--logo-url); background-repeat: repeat; background-size:130px 130px; opacity:0.12; filter: blur(3px) saturate(0.9); z-index:0; pointer-events:none; }
 
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Arial, sans-serif;
-      background: linear-gradient(135deg, rgba(0,120,215,0.18), rgba(0,200,255,0.12));
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
-    }
-    body::before {
-      content: "";
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
-        linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
-      background-size: 140px 140px;
-      pointer-events: none;
-      z-index: 0;
-    }
-    body::after {
-      content: "";
-      position: absolute; inset: 0;
-      background-image: var(--logo-url);
-      background-repeat: repeat;
-      background-size: 130px 130px;
-      opacity: 0.12;
-      filter: blur(3px) saturate(0.9);
-      z-index: 0;
-      pointer-events: none;
-    }
+header { background: rgba(0,120,215,0.9); color:white; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; position:relative; z-index:2; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+.header-left { display:flex; align-items:center; gap:10px; }
+.header-left img { height:45px; border-radius:8px; background:white; padding:3px; }
+.header-left h2 { margin:0; font-size:18px; font-weight:600; letter-spacing:0.3px; }
+button { background-color:#ff4d4d; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-weight:600; transition: background 0.2s ease-in-out; }
+button:hover { background-color:#cc0000; }
 
-    header {
-      background: rgba(0,120,215,0.9);
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      position: relative;
-      z-index: 2;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .header-left img {
-      height: 45px;
-      border-radius: 8px;
-      background: white;
-      padding: 3px;
-    }
-    .header-left h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-    }
-    button {
-      background-color: #ff4d4d;
-      color: white;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background 0.2s ease-in-out;
-    }
-    button:hover { background-color: #cc0000; }
+main { padding:30px 5vw; display:grid; grid-template-columns:repeat(auto-fit, minmax(380px, 1fr)); gap:25px; position:relative; z-index:2; justify-items:center; }
 
-    main {
-      padding: 30px 5vw;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-      gap: 25px;
-      position: relative;
-      z-index: 2;
-      justify-items: center;
-    }
+.modulo { background: rgba(255,255,255,0.95); border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.1); overflow:hidden; display:flex; flex-direction:column; transition: transform 0.2s ease, box-shadow 0.2s ease; width:100%; max-width:550px; position:relative; }
+.modulo:hover { transform:translateY(-3px); box-shadow:0 6px 16px rgba(0,0,0,0.15); }
+.modulo h3 { margin:0; padding:14px 16px; background:#e9f1fb; color:#004a99; font-size:16px; font-weight:600; line-height:1.4; word-break:break-word; border-bottom:1px solid #d0e2fb; }
+iframe.videoFrame { width:100%; aspect-ratio:16/9; border:none; }
+iframe.formFrame { width:100%; height:420px; border:none; display:none; }
 
-    .modulo {
-      background: rgba(255,255,255,0.95);
-      border-radius: 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      width: 100%;
-      max-width: 550px;
-      position: relative;
-    }
-    .modulo:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-    }
-    .modulo h3 {
-      margin: 0;
-      padding: 14px 16px;
-      background: #e9f1fb;
-      color: #004a99;
-      font-size: 16px;
-      font-weight: 600;
-      line-height: 1.4;
-      word-break: break-word;
-      border-bottom: 1px solid #d0e2fb;
-    }
-    iframe.videoFrame {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      border: none;
-    }
-    iframe.formFrame {
-      width: 100%;
-      height: 420px;
-      border: none;
-      display: none;
-    }
-    .info {
-      padding: 12px 18px;
-      font-size: 14px;
-      background: #fafafa;
-      border-top: 1px solid #eee;
-      line-height: 1.5;
-    }
-    .aprobado { color: #007a00; font-weight: bold; }
-    .vencido { color: #d40000; font-weight: bold; }
+.info { padding:12px 18px; font-size:14px; background:#fafafa; border-top:1px solid #eee; line-height:1.5; }
+.aprobado { color:#007a00; font-weight:bold; }
+.vencido { color:#d40000; font-weight:bold; }
+.enCurso { color:#0078d7; font-weight:bold; }
 
-    /* Responsive */
-    @media (max-width: 800px) {
-      main { grid-template-columns: 1fr; padding: 20px; }
-      .modulo { max-width: 100%; }
-      .header-left h2 { font-size: 16px; }
-    }
+@media(max-width:800px){ main{grid-template-columns:1fr;padding:20px;} .modulo{max-width:100%;} .header-left h2{font-size:16px;} }
 
-    /* Mensaje flotante */
-    .rotate-message {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,120,215,0.9);
-      color: white;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 500;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.5s ease-in-out;
-      z-index: 5;
-    }
-    .rotate-message.show {
-      opacity: 1;
-    }
+.rotate-message { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,120,215,0.9); color:white; padding:10px 18px; border-radius:10px; font-size:14px; font-weight:500; opacity:0; pointer-events:none; transition:opacity 0.5s ease-in-out; z-index:5; }
+.rotate-message.show { opacity:1; }
 
-    .refresh-btn {
-      background-color: #0078d7;
-      margin: 10px auto 15px;
-      width: 90%;
-      display: block;
-    }
-    .refresh-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  </style>
+.start-btn { background-color:#0078d7; margin:10px auto 15px; width:90%; display:block; }
+.start-btn:disabled { opacity:0.6; cursor:not-allowed; }
+
+</style>
 </head>
 <body>
-  <header>
-    <div class="header-left">
-      <img id="logo" alt="Logo" />
-      <h2 id="bienvenida">Bienvenido(a):</h2>
-    </div>
-    <button onclick="logout()">Cerrar sesión</button>
-  </header>
+<header>
+  <div class="header-left">
+    <img id="logo" alt="Logo"/>
+    <h2 id="bienvenida">Bienvenido(a):</h2>
+  </div>
+  <button onclick="logout()">Cerrar sesión</button>
+</header>
 
-  <main id="contenedorModulos"></main>
+<main id="contenedorModulos"></main>
 
-  <script>
-    const URL_HOJA1 =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
-    const URL_HOJA2 =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+<script>
+const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
+const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+const tiemposModulos = [
+  {min:16, sec:50},
+  {min:17, sec:50},
+  {min:18, sec:59},
+  {min:12, sec:41},
+  {min:21, sec:11}
+];
 
-    const user = JSON.parse(sessionStorage.getItem("user")) || {};
+const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
-    function parseCSV(text){
-      const rows = [];
-      let cur = "", row = [], inQuotes = false;
-      for (let i=0;i<text.length;i++){
-        const ch = text[i], next = text[i+1];
-        if (ch === '"'){ if (inQuotes && next === '"'){ cur+='"'; i++; continue; } inQuotes=!inQuotes; continue; }
-        if (!inQuotes && ch === ','){ row.push(cur); cur=""; continue; }
-        if (!inQuotes && (ch === '\n' || ch === '\r')){ if(ch==='\r'&&text[i+1]==='\n')i++; row.push(cur); rows.push(row); row=[]; cur=""; continue; }
-        cur+=ch;
-      }
-      if (cur!==""||row.length){ row.push(cur); rows.push(row); }
-      return rows.map(r=>r.map(c=>(c||"").trim()));
+function parseCSV(text){
+  const rows=[];
+  let cur="", row=[], inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i], next=text[i+1];
+    if(ch==='"'){ if(inQuotes&&next==='"'){ cur+='"'; i++; continue; } inQuotes=!inQuotes; continue;}
+    if(!inQuotes&&ch===','){ row.push(cur); cur=""; continue;}
+    if(!inQuotes&&(ch==='\n'||ch==='\r')){ if(ch==='\r'&&text[i+1]==='\n')i++; row.push(cur); rows.push(row); row=[]; cur=""; continue; }
+    cur+=ch;
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row);}
+  return rows.map(r=>r.map(c=>(c||"").trim()));
+}
+
+async function obtenerCSV(url){
+  const res = await fetch(url);
+  const txt = await res.text();
+  return parseCSV(txt);
+}
+
+function driveToPreview(url){ if(!url) return ""; const m=url.match(/(?:\/d\/|id=)([-\w]{20,})/); if(m) return `https://drive.google.com/file/d/${m[1]}/preview`; return url; }
+
+async function aplicarLogo(){
+  try{
+    const hoja2 = await obtenerCSV(URL_HOJA2);
+    const headers = hoja2[0].map(h=>(h||"").trim().toUpperCase());
+    const idxLogo = headers.indexOf("LINK LOGO");
+    const fila = hoja2[1];
+    const logoLink = (idxLogo!==-1?fila[idxLogo]:fila[fila.length-1]||"").trim();
+    if(logoLink){
+      const img = document.getElementById("logo");
+      img.src = driveToPreview(logoLink);
+      document.documentElement.style.setProperty("--logo-url", `url('${logoLink}')`);
     }
+    document.getElementById("bienvenida").textContent = `Bienvenido(a): ${user.nombre||"Usuario"}`;
+  }catch(e){ console.warn("Error al aplicar logo:", e);}
+}
 
-    async function obtenerCSV(url){
-      const res = await fetch(url);
-      const txt = await res.text();
-      return parseCSV(txt);
-    }
+function transformarVideo(link){ if(!link) return ""; return link.includes("/view")? link.replace("/view","/preview") : link;}
+function transformarForm(link){ if(!link) return ""; return link.includes("viewform")? (link.includes("?")? link+"&embedded=true" : link+"?embedded=true") : link;}
 
-    function driveToPreview(url){
-      if (!url) return "";
-      const m = url.match(/(?:\/d\/|id=)([-\\w]{20,})/);
-      if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
-      return url;
-    }
+function calcularVencimiento(fechaInicio){ if(!fechaInicio) return ""; const [d,m,y]=fechaInicio.split("/"); const fecha=new Date(`${y}-${m}-${d}`); fecha.setFullYear(fecha.getFullYear()+1); return fecha.toLocaleDateString("es-PE");}
+function estaVencido(fechaInicio){ if(!fechaInicio) return true; const [d,m,y]=fechaInicio.split("/"); const fecha=new Date(`${y}-${m}-${d}`); fecha.setFullYear(fecha.getFullYear()+1); return new Date() > fecha;}
 
-    async function aplicarLogo(){
-      try {
-        const hoja2 = await obtenerCSV(URL_HOJA2);
-        const headers = hoja2[0].map(h => (h||"").trim().toUpperCase());
-        const idxLogo = headers.indexOf("LINK LOGO");
-        const fila = hoja2[1];
-        const logoLink = (idxLogo !== -1 ? fila[idxLogo] : fila[fila.length-1] || "").trim();
-        if (logoLink){
-          const img = document.getElementById("logo");
-          img.src = driveToPreview(logoLink);
-          document.documentElement.style.setProperty("--logo-url", `url('${logoLink}')`);
-        }
-        document.getElementById("bienvenida").textContent = `Bienvenido(a): ${user.nombre || "Usuario"}`;
-      } catch(e){ console.warn("Error al aplicar logo:", e); }
-    }
+async function cargarModulos(){
+  const hoja1 = await obtenerCSV(URL_HOJA1);
+  const hoja2 = await obtenerCSV(URL_HOJA2);
+  const headers1 = hoja1[0].map(h=>h.toUpperCase());
+  const filaUsuario = hoja1.find(r=>r[1]===user.dni);
+  const filaLinks = hoja2[1];
+  const cont = document.getElementById("contenedorModulos");
+  cont.innerHTML = "";
 
-    function transformarVideo(link){
-      if (!link) return "";
-      return link.includes("/view") ? link.replace("/view", "/preview") : link;
-    }
-    function transformarForm(link){
-      if (!link) return "";
-      return link.includes("viewform") ? (link.includes("?") ? link + "&embedded=true" : link + "?embedded=true") : link;
-    }
+  if(!filaUsuario){ cont.innerHTML="<p>No se encontró tu registro.</p>"; return; }
 
-    function calcularVencimiento(fechaInicio){
-      if (!fechaInicio) return "";
-      const [d,m,y] = fechaInicio.split("/");
-      const fecha = new Date(`${y}-${m}-${d}`);
-      fecha.setFullYear(fecha.getFullYear()+1);
-      return fecha.toLocaleDateString("es-PE");
-    }
-    function estaVencido(fechaInicio){
-      if (!fechaInicio) return true;
-      const [d,m,y] = fechaInicio.split("/");
-      const fecha = new Date(`${y}-${m}-${d}`);
-      fecha.setFullYear(fecha.getFullYear()+1);
-      return new Date() > fecha;
-    }
+  const columnasVideo = headers1.map((h,i)=>({nombre:h,index:i})).filter(o=>o.nombre.includes("VIDEO"));
 
-    async function cargarModulos(){
-      const hoja1 = await obtenerCSV(URL_HOJA1);
-      const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers1 = hoja1[0].map(h => h.toUpperCase());
-      const filaUsuario = hoja1.find(r => r[1] === user.dni);
-      const filaLinks = hoja2[1];
-      const cont = document.getElementById("contenedorModulos");
-      cont.innerHTML = "";
+  columnasVideo.forEach((col,i)=>{
+    const idx = col.index;
+    const nota = parseFloat(filaUsuario[idx+1]||"0");
+    const fechaInicio = filaUsuario[idx+2]||"";
+    const venc = calcularVencimiento(fechaInicio);
+    const vencido = estaVencido(fechaInicio);
+    const videoSrc = transformarVideo(filaLinks[i*2]);
+    const formSrc = transformarForm(filaLinks[i*2+1]);
+    const titulo = col.nombre.replace(/VIDEO\s*(DE)?\s*/i,"").trim();
 
-      if (!filaUsuario){
-        cont.innerHTML = "<p>No se encontró tu registro.</p>";
-        return;
-      }
+    let estado="";
+    if(nota>=12 && !vencido) estado=`<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${venc}.</p>`;
+    else if(vencido&&fechaInicio) estado=`<p class="vencido">⚠️ Vencido el ${venc}. Debe volver a rendir la evaluación.</p>`;
+    else estado=`<p class="enCurso">🕓 Pendiente de evaluación.</p>`;
 
-      const columnasVideo = headers1.map((h,i)=>({nombre:h,index:i}))
-        .filter(o=>o.nombre.includes("VIDEO"));
+    const mostrarForm = nota<12 || vencido;
 
-      columnasVideo.forEach((col,i)=>{
-        const idx = col.index;
-        const nota = parseFloat(filaUsuario[idx+1]||"0");
-        const fechaInicio = filaUsuario[idx+2]||"";
-        const venc = calcularVencimiento(fechaInicio);
-        const vencido = estaVencido(fechaInicio);
-        const videoSrc = transformarVideo(filaLinks[i*2]);
-        const formSrc = transformarForm(filaLinks[i*2+1]);
-        const titulo = col.nombre.replace(/VIDEO\s*(DE)?\s*/i,"").trim();
+    // El módulo inicial (solo el primero) desbloqueado
+    const bloqueado = i>0 && !(parseFloat(filaUsuario[i])>=12);
 
-        let estado = "";
-        if (nota >= 12 && !vencido)
-          estado = `<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${venc}.</p>`;
-        else if (vencido && fechaInicio)
-          estado = `<p class="vencido">⚠️ Vencido el ${venc}. Debe volver a rendir la evaluación.</p>`;
-        else
-          estado = `<p>🕓 Pendiente de evaluación.</p>`;
+    cont.insertAdjacentHTML("beforeend",`
+      <div class="modulo" data-index="${i}" ${bloqueado? 'style="opacity:0.5; pointer-events:none;"':''}>
+        <h3>${titulo}</h3>
+        <div style="position:relative;">
+          <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+          <div class="rotate-message">📺 Gira tu celular para ver mejor el video</div>
+        </div>
+        <div class="info">
+          ${fechaInicio?`<p>📅 Fecha de inicio: ${fechaInicio}</p>`:""}
+          ${venc?`<p>📆 Fecha de vencimiento: ${venc}</p>`:""}
+          ${estado}
+        </div>
+        <button class="start-btn">${!bloqueado ? 'Iniciar Capacitación' : 'Bloqueado'}</button>
+        <span class="contador" style="display:block; text-align:center; margin-bottom:5px;"></span>
+        ${mostrarForm?`<iframe class="formFrame" src="${formSrc}" style="display:none;"></iframe>`:""}
+      </div>
+    `);
+  });
 
-        const mostrarForm = nota < 12 || vencido;
+  agregarEventosModulo();
+}
 
-        cont.insertAdjacentHTML("beforeend",`
-          <div class="modulo">
-            <h3>${titulo}</h3>
-            <div style="position:relative;">
-              <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-              <div class="rotate-message">📺 Gira tu celular para ver mejor el video</div>
-            </div>
-            <div class="info">
-              ${fechaInicio?`<p>📅 Fecha de inicio: ${fechaInicio}</p>`:""}
-              ${venc?`<p>📆 Fecha de vencimiento: ${venc}</p>`:""}
-              ${estado}
-            </div>
-            ${mostrarForm?`
-              <iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>
-              <button class="refresh-btn" onclick="refrescarModulo(this)">🔄 Refrescar módulo</button>
-            `:""}
-          </div>
-        `);
-      });
-
-      agregarEventosVideo();
-    }
-
-    function agregarEventosVideo(){
-      document.querySelectorAll(".modulo iframe.videoFrame").forEach(frame=>{
-        const modulo = frame.closest(".modulo");
-        const mensaje = modulo.querySelector(".rotate-message");
-
-        frame.addEventListener("click", ()=>{
-          mensaje.classList.add("show");
-          setTimeout(()=>mensaje.classList.remove("show"), 4000);
-        });
-
-        frame.addEventListener("load", ()=>{
-          frame.contentWindow?.addEventListener("fullscreenchange", ()=>{
-            mensaje.classList.add("show");
-            setTimeout(()=>mensaje.classList.remove("show"), 4000);
-          });
-        });
+function agregarEventosModulo(){
+  const modulos = document.querySelectorAll(".modulo");
+  modulos.forEach((mod,i)=>{
+    const btn = mod.querySelector(".start-btn");
+    const form = mod.querySelector(".formFrame");
+    const contador = mod.querySelector(".contador");
+    if(btn && btn.textContent==="Iniciar Capacitación"){
+      btn.addEventListener("click", ()=>{
+        btn.style.display="none";
+        let {min, sec} = tiemposModulos[i];
+        contador.textContent = `Tiempo restante: ${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+        const interval = setInterval(()=>{
+          if(sec===0){ if(min>0){ min--; sec=59; } else{ clearInterval(interval); contador.textContent="Tiempo finalizado"; if(form) form.style.display="block"; desbloquearSiguiente(i); return;}}
+          else sec--;
+          contador.textContent = `Tiempo restante: ${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+        },1000);
       });
     }
+  });
+}
 
-    async function refrescarModulo(btn){
-      btn.disabled = true;
-      btn.textContent = "Actualizando...";
-      await cargarModulos();
-      btn.textContent = "🔄 Refrescar módulo";
-      btn.disabled = false;
-    }
+function desbloquearSiguiente(i){
+  const siguiente = document.querySelector(`.modulo[data-index='${i+1}']`);
+  if(siguiente){
+    siguiente.style.opacity="1";
+    siguiente.style.pointerEvents="auto";
+    const btn = siguiente.querySelector(".start-btn");
+    if(btn) btn.textContent="Iniciar Capacitación";
+  }
+}
 
-    function logout(){
-      sessionStorage.clear();
-      window.location.href = "index.html";
-    }
+function logout(){ sessionStorage.clear(); window.location.href="index.html"; }
 
-    aplicarLogo();
-    cargarModulos();
-  </script>
+aplicarLogo();
+cargarModulos();
+</script>
 </body>
 </html>
