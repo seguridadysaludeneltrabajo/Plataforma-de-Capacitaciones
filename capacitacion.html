@@ -60,9 +60,10 @@ iframe.formFrame { width:100%; height:420px; border:none; display:none; }
 <script>
 const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
 const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+
 const tiemposModulos = [
-  {min:16, sec:50},
-  {min:17, sec:50},
+  {min:1, sec:0},
+  {min:1, sec:0},
   {min:18, sec:59},
   {min:12, sec:41},
   {min:21, sec:11}
@@ -139,12 +140,12 @@ async function cargarModulos(){
 
     let estado="";
     if(nota>=12 && !vencido) estado=`<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${venc}.</p>`;
-    else if(vencido&&fechaInicio) estado=`<p class="vencido">⚠️ Vencido el ${venc}. Debe volver a rendir la evaluación.</p>`;
+    else if(vencido && fechaInicio) estado=`<p class="vencido">⚠️ Vencido el ${venc}. Debe volver a rendir la evaluación.</p>`;
     else estado=`<p class="enCurso">🕓 Pendiente de evaluación.</p>`;
 
     const mostrarForm = nota<12 || vencido;
+    const mostrarBoton = nota<12 || vencido;
 
-    // Bloqueado si no es el primero y el anterior no está aprobado
     const bloqueado = i>0 && !(parseFloat(filaUsuario[i])>=12);
 
     cont.insertAdjacentHTML("beforeend",`
@@ -152,7 +153,8 @@ async function cargarModulos(){
         <h3>${titulo}</h3>
         <div class="videoContainer">
           <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-          <button class="start-btn">${!bloqueado ? 'Iniciar Capacitación' : 'Bloqueado'}</button>
+          ${mostrarBoton && !bloqueado ? '<button class="start-btn">Iniciar Capacitación</button>' : ''}
+          ${bloqueado ? '<button class="start-btn">Bloqueado</button>' : ''}
           <div class="rotate-message">📺 Gira tu celular para ver mejor el video</div>
         </div>
         <div class="info">
@@ -215,3 +217,4 @@ cargarModulos();
 </script>
 </body>
 </html>
+
