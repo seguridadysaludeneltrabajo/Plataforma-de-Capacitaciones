@@ -148,15 +148,23 @@ async function cargarModulos(){
     const mostrarForm = nota<12 || vencido;
     const mostrarBoton = nota<12 || vencido;
 
-    const bloqueado = i>0 && !(parseFloat(filaUsuario[i])>=12);
+    // Bloqueo secuencial: solo el primer módulo activo al inicio, luego depende del anterior aprobado
+    let bloqueado=false;
+    if(i===0){
+      bloqueado=false;
+    } else {
+      const idxNotaAnterior = columnasVideo[i-1].index + 1;
+      const fechaAnterior = filaUsuario[idxNotaAnterior+1] || "";
+      const notaAnterior = parseFloat(filaUsuario[idxNotaAnterior]||"0");
+      bloqueado = !(notaAnterior>=12 && !estaVencido(fechaAnterior));
+    }
 
     cont.insertAdjacentHTML("beforeend",`
       <div class="modulo" data-index="${i}" ${bloqueado? 'style="opacity:0.5; pointer-events:none;"':''}>
         <h3>${titulo}</h3>
         <div class="videoContainer">
           <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-          ${mostrarBoton && !bloqueado ? '<button class="start-btn">Iniciar Capacitación</button>' : ''}
-          ${bloqueado ? '<button class="start-btn">Bloqueado</button>' : ''}
+          ${(!bloqueado && mostrarBoton)?'<button class="start-btn">Iniciar Capacitación</button>':''}
           <div class="rotate-message">📺 Gira tu celular para ver mejor el video</div>
         </div>
         <div class="info">
@@ -182,7 +190,7 @@ function agregarEventosModulo(){
     const contador = mod.querySelector(".contador");
     const refreshBtn = mod.querySelector(".refresh-btn");
 
-    if(btn && btn.textContent==="Iniciar Capacitación"){
+    if(btn){
       btn.addEventListener("click", ()=>{
         btn.style.display = "none";
         let {min, sec} = tiemposModulos[i];
@@ -194,7 +202,7 @@ function agregarEventosModulo(){
               clearInterval(interval); 
               contador.textContent="Tiempo finalizado"; 
               if(form) form.style.display="block"; 
-              refreshBtn.style.display="inline-block"; 
+              if(refreshBtn) refreshBtn.style.display="inline-block"; 
               return;
             }
           } else sec--;
@@ -227,7 +235,7 @@ async function iniciarCarga(){
   }
 }
 
-iniciarCarga(); // Llamada inicial
+iniciarCarga(); 
 </script>
 </body>
 </html>
