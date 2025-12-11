@@ -1,32 +1,179 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Capacitación SSt — Temporizador y Bloqueo + Nota ≥ 12</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capacitación de Seguridad y Salud en el Trabajo</title>
   <style>
-    :root{--logo-url:none}
-    body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:linear-gradient(135deg,rgba(0,120,215,0.18),rgba(0,200,255,0.12));min-height:100vh;position:relative;overflow-x:hidden}
-    header{background:rgba(0,120,215,0.9);color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;z-index:2}
-    .header-left{display:flex;gap:10px;align-items:center}
-    .header-left img{height:45px;border-radius:8px;background:#fff;padding:3px}
-    main{padding:30px 5vw;display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:25px;z-index:2;justify-items:center}
-    .modulo{background:rgba(255,255,255,0.95);border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column;width:100%;max-width:550px;position:relative;padding-bottom:12px}
-    .modulo.bloqueado{opacity:.45;pointer-events:none;filter:grayscale(.02)}
-    .modulo h3{margin:0;padding:14px 16px;background:#e9f1fb;color:#004a99;font-size:16px;font-weight:600;border-bottom:1px solid #d0e2fb}
-    iframe.videoFrame{width:100%;aspect-ratio:16/9;border:0}
-    iframe.formFrame{width:100%;height:420px;border:0;display:none}
-    .info{padding:12px 18px;font-size:14px;background:#fafafa;border-top:1px solid #eee;line-height:1.5}
-    .aprobado{color:#007a00;font-weight:700}
-    .vencido{color:#d40000;font-weight:700}
-    .contador{font-weight:700;margin-top:8px}
-    .progress-bar{width:90%;height:10px;background:#eee;border-radius:6px;overflow:hidden;margin:10px auto}
-    .progress-fill{height:100%;width:0%;background:#4caf50;transition:width 1s linear}
-    .rotate-message{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,120,215,0.9);color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .3s;z-index:5}
-    .rotate-message.show{opacity:1}
-    .start-btn{background:#0078d7;color:#fff;border:none;padding:10px 18px;border-radius:8px;margin:10px auto 0;display:block;font-size:15px;cursor:pointer}
-    .refresh-btn{background:#444;color:#fff;border:none;padding:8px 14px;border-radius:8px;margin:10px auto 0;display:block}
-    @media(max-width:800px){main{grid-template-columns:1fr;padding:20px}}
+    :root { --logo-url: none; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, rgba(0,120,215,0.18), rgba(0,200,255,0.12));
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 140px 140px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: "";
+      position: absolute; inset: 0;
+      background-image: var(--logo-url);
+      background-repeat: repeat;
+      background-size: 130px 130px;
+      opacity: 0.12;
+      filter: blur(3px) saturate(0.9);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    header {
+      background: rgba(0,120,215,0.9);
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-left img {
+      height: 45px;
+      border-radius: 8px;
+      background: white;
+      padding: 3px;
+    }
+    .header-left h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    button {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s ease-in-out;
+    }
+    button:hover { background-color: #cc0000; }
+
+    main {
+      padding: 30px 5vw;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 25px;
+      position: relative;
+      z-index: 2;
+      justify-items: center;
+    }
+
+    .modulo {
+      background: rgba(255,255,255,0.95);
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      width: 100%;
+      max-width: 550px;
+      position: relative;
+    }
+    .modulo:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+    .modulo h3 {
+      margin: 0;
+      padding: 14px 16px;
+      background: #e9f1fb;
+      color: #004a99;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.4;
+      word-break: break-word;
+      border-bottom: 1px solid #d0e2fb;
+    }
+    iframe.videoFrame {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: none;
+    }
+    iframe.formFrame {
+      width: 100%;
+      height: 420px;
+      border: none;
+      display: none;
+    }
+    .info {
+      padding: 12px 18px;
+      font-size: 14px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+      line-height: 1.5;
+    }
+    .aprobado { color: #007a00; font-weight: bold; }
+    .vencido { color: #d40000; font-weight: bold; }
+
+    /* Responsive */
+    @media (max-width: 800px) {
+      main { grid-template-columns: 1fr; padding: 20px; }
+      .modulo { max-width: 100%; }
+      .header-left h2 { font-size: 16px; }
+    }
+
+    /* Mensaje flotante */
+    .rotate-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,120,215,0.9);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease-in-out;
+      z-index: 5;
+    }
+    .rotate-message.show {
+      opacity: 1;
+    }
+
+    .refresh-btn {
+      background-color: #0078d7;
+      margin: 10px auto 15px;
+      width: 90%;
+      display: block;
+    }
+    .refresh-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -41,300 +188,174 @@
   <main id="contenedorModulos"></main>
 
   <script>
-  /*************************************************************************
-   * CONFIG
-   *************************************************************************/
-  const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
-  const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
+    const URL_HOJA1 =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
+    const URL_HOJA2 =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 
-  const NOTA_MINIMA = 12;
-  const DURACIONES_SEG = [1010, 1075, 1139, 769, 1272];
+    const user = JSON.parse(sessionStorage.getItem("user")) || {};
 
-  let user = JSON.parse(sessionStorage.getItem("user") || "{}");
-  if (!user || !user.dni) {
-    const dni = prompt("Ingrese su DNI/CE para continuar:");
-    user = user || {};
-    user.dni = dni ? dni.trim() : "";
-    sessionStorage.setItem("user", JSON.stringify(user));
-  }
-
-  /*************************************************************************
-   * PARSE CSV
-   *************************************************************************/
-  function parseCSV(text){
-    const rows = [];
-    let cur="", row=[], inQuotes=false;
-    for (let i=0;i<text.length;i++){
-      const ch=text[i], next=text[i+1];
-      if(ch=='"'){ if(inQuotes&&next=='"'){cur+='"'; i++; continue;} inQuotes=!inQuotes; continue;}
-      if(!inQuotes && ch==','){ row.push(cur); cur=""; continue; }
-      if(!inQuotes && (ch=='\n'||ch=='\r')){
-        if(ch=='\r' && text[i+1]=='\n') i++;
-        row.push(cur); rows.push(row); row=[]; cur=""; continue;
+    function parseCSV(text){
+      const rows = [];
+      let cur = "", row = [], inQuotes = false;
+      for (let i=0;i<text.length;i++){
+        const ch = text[i], next = text[i+1];
+        if (ch === '"'){ if (inQuotes && next === '"'){ cur+='"'; i++; continue; } inQuotes=!inQuotes; continue; }
+        if (!inQuotes && ch === ','){ row.push(cur); cur=""; continue; }
+        if (!inQuotes && (ch === '\n' || ch === '\r')){ if(ch==='\r'&&text[i+1]==='\n')i++; row.push(cur); rows.push(row); row=[]; cur=""; continue; }
+        cur+=ch;
       }
-      cur+=ch;
+      if (cur!==""||row.length){ row.push(cur); rows.push(row); }
+      return rows.map(r=>r.map(c=>(c||"").trim()));
     }
-    if(cur!==""||row.length){ row.push(cur); rows.push(row);}
-    return rows.map(r=>r.map(c=>(c||"").trim()));
-  }
-  async function obtenerCSV(url){
-    const res = await fetch(url);
-    return parseCSV(await res.text());
-  }
 
-  function driveToPreview(url){
-    if(!url) return "";
-    const m=url.match(/(?:\/d\/|id=)([-\w]{20,})/);
-    return m ? `https://drive.google.com/file/d/${m[1]}/preview` : url;
-  }
-  function transformarVideo(l){ return l && l.includes("/view") ? l.replace("/view","/preview") : l; }
-  function transformarForm(l){
-    if(!l) return "";
-    if(l.includes("viewform")) return l.includes("?") ? l+"&embedded=true" : l+"?embedded=true";
-    return l;
-  }
+    async function obtenerCSV(url){
+      const res = await fetch(url);
+      const txt = await res.text();
+      return parseCSV(txt);
+    }
 
-  /*************************************************************************
-   * LOGO Y NOMBRE
-   *************************************************************************/
-  async function aplicarLogo(){
-    try {
+    function driveToPreview(url){
+      if (!url) return "";
+      const m = url.match(/(?:\/d\/|id=)([-\\w]{20,})/);
+      if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+      return url;
+    }
+
+    async function aplicarLogo(){
+      try {
+        const hoja2 = await obtenerCSV(URL_HOJA2);
+        const headers = hoja2[0].map(h => (h||"").trim().toUpperCase());
+        const idxLogo = headers.indexOf("LINK LOGO");
+        const fila = hoja2[1];
+        const logoLink = (idxLogo !== -1 ? fila[idxLogo] : fila[fila.length-1] || "").trim();
+        if (logoLink){
+          const img = document.getElementById("logo");
+          img.src = driveToPreview(logoLink);
+          document.documentElement.style.setProperty("--logo-url", `url('${logoLink}')`);
+        }
+        document.getElementById("bienvenida").textContent = `Bienvenido(a): ${user.nombre || "Usuario"}`;
+      } catch(e){ console.warn("Error al aplicar logo:", e); }
+    }
+
+    function transformarVideo(link){
+      if (!link) return "";
+      return link.includes("/view") ? link.replace("/view", "/preview") : link;
+    }
+    function transformarForm(link){
+      if (!link) return "";
+      return link.includes("viewform") ? (link.includes("?") ? link + "&embedded=true" : link + "?embedded=true") : link;
+    }
+
+    function calcularVencimiento(fechaInicio){
+      if (!fechaInicio) return "";
+      const [d,m,y] = fechaInicio.split("/");
+      const fecha = new Date(`${y}-${m}-${d}`);
+      fecha.setFullYear(fecha.getFullYear()+1);
+      return fecha.toLocaleDateString("es-PE");
+    }
+    function estaVencido(fechaInicio){
+      if (!fechaInicio) return true;
+      const [d,m,y] = fechaInicio.split("/");
+      const fecha = new Date(`${y}-${m}-${d}`);
+      fecha.setFullYear(fecha.getFullYear()+1);
+      return new Date() > fecha;
+    }
+
+    async function cargarModulos(){
+      const hoja1 = await obtenerCSV(URL_HOJA1);
       const hoja2 = await obtenerCSV(URL_HOJA2);
-      const headers = hoja2[0].map(h=>h.trim().toUpperCase());
-      const idxLogo = headers.indexOf("LINK LOGO");
-      const fila = hoja2[1] || [];
-      const logoLink = (idxLogo!=-1 ? fila[idxLogo] : fila[fila.length-1] || "").trim();
-      if(logoLink){
-        document.getElementById("logo").src = driveToPreview(logoLink);
+      const headers1 = hoja1[0].map(h => h.toUpperCase());
+      const filaUsuario = hoja1.find(r => r[1] === user.dni);
+      const filaLinks = hoja2[1];
+      const cont = document.getElementById("contenedorModulos");
+      cont.innerHTML = "";
+
+      if (!filaUsuario){
+        cont.innerHTML = "<p>No se encontró tu registro.</p>";
+        return;
       }
-      document.getElementById("bienvenida").textContent = `Bienvenido(a): ${user.nombre || user.dni}`;
-    } catch (e){ console.warn(e); }
-  }
 
-  /*************************************************************************
-   * CARGAR MÓDULOS
-   *************************************************************************/
-  async function cargarModulos(){
-    const hoja1 = await obtenerCSV(URL_HOJA1);
-    const hoja2 = await obtenerCSV(URL_HOJA2);
+      const columnasVideo = headers1.map((h,i)=>({nombre:h,index:i}))
+        .filter(o=>o.nombre.includes("VIDEO"));
 
-    const headers1 = hoja1[0].map(h=>h.trim().toUpperCase());
-    const idxDni = headers1.findIndex(h=>h.includes("DNI"));
+      columnasVideo.forEach((col,i)=>{
+        const idx = col.index;
+        const nota = parseFloat(filaUsuario[idx+1]||"0");
+        const fechaInicio = filaUsuario[idx+2]||"";
+        const venc = calcularVencimiento(fechaInicio);
+        const vencido = estaVencido(fechaInicio);
+        const videoSrc = transformarVideo(filaLinks[i*2]);
+        const formSrc = transformarForm(filaLinks[i*2+1]);
+        const titulo = col.nombre.replace(/VIDEO\s*(DE)?\s*/i,"").trim();
 
-    const filaUsuario = hoja1.find(r => (r[idxDni]||"").trim() === user.dni);
+        let estado = "";
+        if (nota >= 12 && !vencido)
+          estado = `<p class="aprobado">✅ Aprobado con nota ${nota}. Vence el ${venc}.</p>`;
+        else if (vencido && fechaInicio)
+          estado = `<p class="vencido">⚠️ Vencido el ${venc}. Debe volver a rendir la evaluación.</p>`;
+        else
+          estado = `<p>🕓 Pendiente de evaluación.</p>`;
 
-    const links = hoja2[1] || hoja2[0];
+        const mostrarForm = nota < 12 || vencido;
 
-    const cont = document.getElementById("contenedorModulos");
-    cont.innerHTML="";
-
-    if(!filaUsuario){
-      cont.innerHTML="<p>No se encontró tu registro.</p>";
-      return;
-    }
-
-    const columnasVideo = headers1
-      .map((h,i)=>({h,i}))
-      .filter(o=>o.h.includes("VIDEO"));
-
-    columnasVideo.forEach((col, i)=>{
-      const vidCol = col.i;
-      const notaCol = vidCol+1;
-      const fechaCol = vidCol+2;
-
-      const nota = parseFloat(filaUsuario[notaCol]||"0");
-      const fechaIni = filaUsuario[fechaCol]||"";
-      const venc = calcVenc(fechaIni);
-      const vencido = isVenc(fechaIni);
-
-      const videoSrc = transformarVideo(links[i*2] || "");
-      const formSrc  = transformarForm(links[i*2+1] || "");
-
-      const titulo = col.h.replace(/VIDEO/i,"").trim();
-
-      const ok = (nota >= NOTA_MINIMA && !vencido);
-      const dur = DURACIONES_SEG[i] || 60;
-
-      cont.insertAdjacentHTML("beforeend",`
-        <div class="modulo" id="modulo_${i}" data-idx="${i}" data-duracion="${dur}">
-          <h3>${titulo}</h3>
-
-          <iframe class="videoFrame" id="video_${i}" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
-
-          <button class="start-btn" id="start_${i}" onclick="iniciarModulo(${i})">
-            ▶ Iniciar módulo
-          </button>
-
-          <div class="info">
-            <div class="contador" id="contador_${i}"></div>
-            <div class="progress-bar"><div class="progress-fill" id="progreso_${i}"></div></div>
+        cont.insertAdjacentHTML("beforeend",`
+          <div class="modulo">
+            <h3>${titulo}</h3>
+            <div style="position:relative;">
+              <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+              <div class="rotate-message">📺 Gira tu celular para ver mejor el video</div>
+            </div>
+            <div class="info">
+              ${fechaInicio?`<p>📅 Fecha de inicio: ${fechaInicio}</p>`:""}
+              ${venc?`<p>📆 Fecha de vencimiento: ${venc}</p>`:""}
+              ${estado}
+            </div>
+            ${mostrarForm?`
+              <iframe class="formFrame" src="${formSrc}" style="display:block;"></iframe>
+              <button class="refresh-btn" onclick="refrescarModulo(this)">🔄 Refrescar módulo</button>
+            `:""}
           </div>
+        `);
+      });
 
-          <iframe class="formFrame" id="form_${i}" src="${formSrc}"></iframe>
-
-          <button class="refresh-btn" id="refresh_${i}" onclick="refrescarModulo(this)">🔄 Refrescar módulo</button>
-        </div>
-      `);
-
-      if(ok){
-        localStorage.setItem(`mod_ok_${i}`, "1");
-      }
-    });
-
-    aplicarBloqueos();
-    inicializarControl();
-  }
-
-  /*************************************************************************
-   * VENCIMIENTO
-   *************************************************************************/
-  function calcVenc(fi){
-    if(!fi) return "";
-    const [d,m,y] = fi.split("/");
-    const f = new Date(`${y}-${m}-${d}`);
-    f.setFullYear(f.getFullYear()+1);
-    return f.toLocaleDateString("es-PE");
-  }
-  function isVenc(fi){
-    if(!fi) return true;
-    const [d,m,y] = fi.split("/");
-    const f = new Date(`${y}-${m}-${d}`);
-    f.setFullYear(f.getFullYear()+1);
-    return new Date() > f;
-  }
-
-  /*************************************************************************
-   * BLOQUEO
-   *************************************************************************/
-  function aplicarBloqueos(){
-    document.querySelectorAll(".modulo").forEach((m,i)=>{
-      if(i===0) return m.classList.remove("bloqueado");
-      localStorage.getItem(`mod_ok_${i-1}`)==="1"
-        ? m.classList.remove("bloqueado")
-        : m.classList.add("bloqueado");
-    });
-  }
-  function desbloquearSig(i){
-    const n = document.getElementById(`modulo_${i+1}`);
-    if(n) n.classList.remove("bloqueado");
-  }
-
-  /*************************************************************************
-   * NUEVO — BOTÓN INICIAR MÓDULO
-   *************************************************************************/
-  function iniciarModulo(i){
-    const startBtn = document.getElementById(`start_${i}`);
-    if(startBtn.disabled) return;
-
-    // No permitir si módulo anterior no está completo
-    if(i>0 && localStorage.getItem(`mod_ok_${i-1}`)!=="1"){
-      alert("Debe completar el módulo anterior.");
-      return;
+      agregarEventosVideo();
     }
 
-    startBtn.disabled = true;
+    function agregarEventosVideo(){
+      document.querySelectorAll(".modulo iframe.videoFrame").forEach(frame=>{
+        const modulo = frame.closest(".modulo");
+        const mensaje = modulo.querySelector(".rotate-message");
 
-    const now = Date.now();
-    localStorage.setItem(`start_ts_${i}`, now.toString());
-    localStorage.setItem(`elapsed_${i}`, "0");
+        frame.addEventListener("click", ()=>{
+          mensaje.classList.add("show");
+          setTimeout(()=>mensaje.classList.remove("show"), 4000);
+        });
 
-    iniciarContador(i);
-  }
-
-  /*************************************************************************
-   * CONTROL TEMPORIZADORES
-   *************************************************************************/
-  function inicializarControl(){
-    document.querySelectorAll(".modulo").forEach((m,i)=>{
-      const ok = localStorage.getItem(`mod_ok_${i}`)==="1";
-      if(ok){
-        document.getElementById(`contador_${i}`).textContent="✔ Módulo completado";
-        document.getElementById(`progreso_${i}`).style.width="100%";
-        document.getElementById(`form_${i}`).style.display="block";
-        document.getElementById(`start_${i}`).style.display="none";
-      } else {
-        iniciarContador(i,true);
-      }
-    });
-  }
-
-  function iniciarContador(i,soloActualiza=false){
-    const modulo = document.getElementById(`modulo_${i}`);
-    const dur = parseInt(modulo.dataset.duracion,10);
-    const contadorEl = document.getElementById(`contador_${i}`);
-    const progressEl = document.getElementById(`progreso_${i}`);
-    const form = document.getElementById(`form_${i}`);
-    const startBtn = document.getElementById(`start_${i}`);
-
-    const start = parseInt(localStorage.getItem(`start_ts_${i}`)||"0",10);
-    const elapsed = parseInt(localStorage.getItem(`elapsed_${i}`)||"0",10);
-
-    if(!start){
-      contadorEl.textContent = `⏱️ Tiempo total: ${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}`;
-      return;
+        frame.addEventListener("load", ()=>{
+          frame.contentWindow?.addEventListener("fullscreenchange", ()=>{
+            mensaje.classList.add("show");
+            setTimeout(()=>mensaje.classList.remove("show"), 4000);
+          });
+        });
+      });
     }
 
-    let rem = dur - (Math.floor((Date.now()-start)/1000) + elapsed);
-    if(rem<=0){
-      localStorage.setItem(`mod_ok_${i}`,"1");
-      contadorEl.textContent="✔ Tiempo completado";
-      progressEl.style.width="100%";
-      form.style.display="block";
-      startBtn.style.display="none";
-      desbloquearSig(i);
-      return;
+    async function refrescarModulo(btn){
+      btn.disabled = true;
+      btn.textContent = "Actualizando...";
+      await cargarModulos();
+      btn.textContent = "🔄 Refrescar módulo";
+      btn.disabled = false;
     }
 
-    if(soloActualiza){
-      actualizar();
-      return;
+    function logout(){
+      sessionStorage.clear();
+      window.location.href = "index.html";
     }
 
-    actualizar();
-    const iv = setInterval(()=>{
-      if(localStorage.getItem(`mod_ok_${i}`)==="1"){ clearInterval(iv); return; }
-      rem--;
-      localStorage.setItem(`elapsed_${i}`, String(dur-rem));
-      actualizar();
-      if(rem<=0){
-        clearInterval(iv);
-        localStorage.setItem(`mod_ok_${i}`,"1");
-        contadorEl.textContent="✔ Tiempo completado";
-        progressEl.style.width="100%";
-        form.style.display="block";
-        startBtn.style.display="none";
-        desbloquearSig(i);
-      }
-    },1000);
-
-    function actualizar(){
-      const min=Math.floor(rem/60), sec=rem%60;
-      contadorEl.textContent=`⏱️ Tiempo restante: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-      progressEl.style.width = (((dur-rem)/dur)*100)+"%";
-    }
-  }
-
-  /*************************************************************************
-   * REFRESCAR Y LOGOUT
-   *************************************************************************/
-  async function refrescarModulo(btn){
-    btn.textContent="Actualizando...";
-    btn.disabled=true;
-    await cargarModulos();
-    btn.textContent="🔄 Refrescar módulo";
-    btn.disabled=false;
-  }
-  function logout(){
-    sessionStorage.clear();
-    window.location.href="index.html";
-  }
-
-  /*************************************************************************
-   * INICIO
-   *************************************************************************/
-  aplicarLogo();
-  cargarModulos();
-
+    aplicarLogo();
+    cargarModulos();
   </script>
 </body>
 </html>
