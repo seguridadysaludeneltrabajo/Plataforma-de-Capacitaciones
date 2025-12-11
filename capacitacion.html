@@ -32,7 +32,7 @@ main { padding:30px 5vw; display:grid; grid-template-columns:repeat(auto-fit, mi
 }
 .videoContainer .start-btn:hover { opacity:1; }
 
-iframe.formFrame { width:100%; height:420px; border:none; display:none; }
+iframe.formFrame { width:100%; height:420px; border:none; display:none; margin-top:8px; }
 .info { padding:12px 18px; font-size:14px; background:#fafafa; border-top:1px solid #eee; line-height:1.5; }
 .aprobado { color:#007a00; font-weight:bold; }
 .vencido { color:#d40000; font-weight:bold; }
@@ -43,7 +43,9 @@ iframe.formFrame { width:100%; height:420px; border:none; display:none; }
 .rotate-message { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,120,215,0.9); color:white; padding:10px 18px; border-radius:10px; font-size:14px; font-weight:500; opacity:0; pointer-events:none; transition:opacity 0.5s ease-in-out; z-index:5; }
 .rotate-message.show { opacity:1; }
 
-.contador { display:block; text-align:center; margin-bottom:5px; font-weight:600; }
+.contador { display:inline-block; font-weight:600; margin-right:10px; }
+.refresh-btn { display:inline-block; padding:6px 12px; background:#0078d7; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600; }
+.refresh-btn:hover { background:#005a9e; }
 </style>
 </head>
 <body>
@@ -164,6 +166,7 @@ async function cargarModulos(){
         </div>
         ${mostrarForm?`<iframe class="formFrame" src="${formSrc}" style="display:none;"></iframe>`:""}
         <span class="contador"></span>
+        <button class="refresh-btn" style="display:none;">🔄 Refrescar módulo</button>
       </div>
     `);
   });
@@ -177,6 +180,8 @@ function agregarEventosModulo(){
     const btn = mod.querySelector(".start-btn");
     const form = mod.querySelector(".formFrame");
     const contador = mod.querySelector(".contador");
+    const refreshBtn = mod.querySelector(".refresh-btn");
+
     if(btn && btn.textContent==="Iniciar Capacitación"){
       btn.addEventListener("click", ()=>{
         btn.style.display = "none"; // desaparece el botón
@@ -189,7 +194,7 @@ function agregarEventosModulo(){
               clearInterval(interval); 
               contador.textContent="Tiempo finalizado"; 
               if(form) form.style.display="block"; 
-              desbloquearSiguiente(i); 
+              refreshBtn.style.display="inline-block"; // mostrar botón de refrescar
               return;
             }
           } else sec--;
@@ -197,17 +202,15 @@ function agregarEventosModulo(){
         },1000);
       });
     }
-  });
-}
 
-function desbloquearSiguiente(i){
-  const siguiente = document.querySelector(`.modulo[data-index='${i+1}']`);
-  if(siguiente){
-    siguiente.style.opacity="1";
-    siguiente.style.pointerEvents="auto";
-    const btn = siguiente.querySelector(".start-btn");
-    if(btn) btn.textContent="Iniciar Capacitación";
-  }
+    if(refreshBtn){
+      refreshBtn.addEventListener("click", async ()=>{
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = "Verificando...";
+        await cargarModulos();
+      });
+    }
+  });
 }
 
 function logout(){ sessionStorage.clear(); window.location.href="index.html"; }
@@ -217,4 +220,5 @@ cargarModulos();
 </script>
 </body>
 </html>
+
 
