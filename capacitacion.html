@@ -22,9 +22,17 @@ main { padding:30px 5vw; display:grid; grid-template-columns:repeat(auto-fit, mi
 .modulo { background: rgba(255,255,255,0.95); border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.1); overflow:hidden; display:flex; flex-direction:column; transition: transform 0.2s ease, box-shadow 0.2s ease; width:100%; max-width:550px; position:relative; }
 .modulo:hover { transform:translateY(-3px); box-shadow:0 6px 16px rgba(0,0,0,0.15); }
 .modulo h3 { margin:0; padding:14px 16px; background:#e9f1fb; color:#004a99; font-size:16px; font-weight:600; line-height:1.4; word-break:break-word; border-bottom:1px solid #d0e2fb; }
-iframe.videoFrame { width:100%; aspect-ratio:16/9; border:none; }
-iframe.formFrame { width:100%; height:420px; border:none; display:none; }
 
+.videoContainer { position: relative; width:100%; }
+.videoContainer iframe.videoFrame { width:100%; aspect-ratio:16 / 9; border:none; }
+.videoContainer .start-btn {
+  position: absolute; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:2; padding:12px 20px; font-size:16px; font-weight:600;
+  background-color:#0078d7; color:white; border:none; border-radius:8px; cursor:pointer; opacity:0.9; transition:opacity 0.2s ease;
+}
+.videoContainer .start-btn:hover { opacity:1; }
+
+iframe.formFrame { width:100%; height:420px; border:none; display:none; }
 .info { padding:12px 18px; font-size:14px; background:#fafafa; border-top:1px solid #eee; line-height:1.5; }
 .aprobado { color:#007a00; font-weight:bold; }
 .vencido { color:#d40000; font-weight:bold; }
@@ -35,9 +43,7 @@ iframe.formFrame { width:100%; height:420px; border:none; display:none; }
 .rotate-message { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,120,215,0.9); color:white; padding:10px 18px; border-radius:10px; font-size:14px; font-weight:500; opacity:0; pointer-events:none; transition:opacity 0.5s ease-in-out; z-index:5; }
 .rotate-message.show { opacity:1; }
 
-.start-btn { background-color:#0078d7; margin:10px auto 15px; width:90%; display:block; }
-.start-btn:disabled { opacity:0.6; cursor:not-allowed; }
-
+.contador { display:block; text-align:center; margin-bottom:5px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -55,8 +61,8 @@ iframe.formFrame { width:100%; height:420px; border:none; display:none; }
 const URL_HOJA1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=0&single=true&output=csv";
 const URL_HOJA2 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmakWaQb439YnevNTOssg1bPzA2Oz5CtZeHok3UXmaciQkD2Ed-nTweo8sFi3pIHwgzZrM610NoBME/pub?gid=1479015803&single=true&output=csv";
 const tiemposModulos = [
-  {min:1, sec:5},
-  {min:1, sec:5},
+  {min:16, sec:50},
+  {min:17, sec:50},
   {min:18, sec:59},
   {min:12, sec:41},
   {min:21, sec:11}
@@ -138,14 +144,15 @@ async function cargarModulos(){
 
     const mostrarForm = nota<12 || vencido;
 
-    // El módulo inicial (solo el primero) desbloqueado
+    // Bloqueado si no es el primero y el anterior no está aprobado
     const bloqueado = i>0 && !(parseFloat(filaUsuario[i])>=12);
 
     cont.insertAdjacentHTML("beforeend",`
       <div class="modulo" data-index="${i}" ${bloqueado? 'style="opacity:0.5; pointer-events:none;"':''}>
         <h3>${titulo}</h3>
-        <div style="position:relative;">
+        <div class="videoContainer">
           <iframe class="videoFrame" src="${videoSrc}" allow="autoplay; fullscreen"></iframe>
+          <button class="start-btn">${!bloqueado ? 'Iniciar Capacitación' : 'Bloqueado'}</button>
           <div class="rotate-message">📺 Gira tu celular para ver mejor el video</div>
         </div>
         <div class="info">
@@ -153,9 +160,8 @@ async function cargarModulos(){
           ${venc?`<p>📆 Fecha de vencimiento: ${venc}</p>`:""}
           ${estado}
         </div>
-        <button class="start-btn">${!bloqueado ? 'Iniciar Capacitación' : 'Bloqueado'}</button>
-        <span class="contador" style="display:block; text-align:center; margin-bottom:5px;"></span>
         ${mostrarForm?`<iframe class="formFrame" src="${formSrc}" style="display:none;"></iframe>`:""}
+        <span class="contador"></span>
       </div>
     `);
   });
@@ -171,12 +177,20 @@ function agregarEventosModulo(){
     const contador = mod.querySelector(".contador");
     if(btn && btn.textContent==="Iniciar Capacitación"){
       btn.addEventListener("click", ()=>{
-        btn.style.display="none";
+        btn.style.display = "none"; // desaparece el botón
         let {min, sec} = tiemposModulos[i];
         contador.textContent = `Tiempo restante: ${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
         const interval = setInterval(()=>{
-          if(sec===0){ if(min>0){ min--; sec=59; } else{ clearInterval(interval); contador.textContent="Tiempo finalizado"; if(form) form.style.display="block"; desbloquearSiguiente(i); return;}}
-          else sec--;
+          if(sec===0){ 
+            if(min>0){ min--; sec=59; } 
+            else{ 
+              clearInterval(interval); 
+              contador.textContent="Tiempo finalizado"; 
+              if(form) form.style.display="block"; 
+              desbloquearSiguiente(i); 
+              return;
+            }
+          } else sec--;
           contador.textContent = `Tiempo restante: ${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
         },1000);
       });
